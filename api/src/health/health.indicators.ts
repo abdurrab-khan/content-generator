@@ -17,7 +17,10 @@ export class DatabaseHealthIndicator {
       return { [key]: { status: 'up' } };
     } catch (error) {
       throw new HealthCheckError('Database check failed', {
-        [key]: { status: 'down', message: error instanceof Error ? error.message : 'unknown' },
+        [key]: {
+          status: 'down',
+          message: error instanceof Error ? error.message : 'unknown',
+        },
       });
     }
   }
@@ -43,7 +46,10 @@ export class RedisHealthIndicator implements OnModuleDestroy {
       return { [key]: { status: 'up' } };
     } catch (error) {
       throw new HealthCheckError('Redis check failed', {
-        [key]: { status: 'down', message: error instanceof Error ? error.message : 'unknown' },
+        [key]: {
+          status: 'down',
+          message: error instanceof Error ? error.message : 'unknown',
+        },
       });
     }
   }

@@ -6,7 +6,8 @@
  *  - seconds (number) — storage & ffmpeg friendly
  */
 
-const TIMESTAMP_REGEX = /^(?:(\d{1,3}):)?([0-5]?\d):([0-5]?\d)(?:[.,](\d{1,3}))?$/;
+const TIMESTAMP_REGEX =
+  /^(?:(\d{1,3}):)?([0-5]?\d):([0-5]?\d)(?:[.,](\d{1,3}))?$/;
 
 /** Parse "HH:MM:SS(.mmm)" / "MM:SS(.mmm)" into seconds. Throws on invalid input. */
 export function timestampToSeconds(timestamp: string): number {

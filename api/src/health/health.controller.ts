@@ -21,7 +21,9 @@ export class HealthController {
   @Get()
   @AllowAnonymous()
   @HealthCheck()
-  @ApiOperation({ summary: 'Liveness/readiness: database, redis, yt-dlp & ffmpeg binaries' })
+  @ApiOperation({
+    summary: 'Liveness/readiness: database, redis, yt-dlp & ffmpeg binaries',
+  })
   check() {
     return this.health.check([
       () => this.database.isHealthy('database'),

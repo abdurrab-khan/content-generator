@@ -52,7 +52,13 @@ export class FfmpegService {
   }
 
   async cutClip(options: CutClipOptions): Promise<void> {
-    const { inputPath, outputPath, startSeconds, endSeconds, precise = true } = options;
+    const {
+      inputPath,
+      outputPath,
+      startSeconds,
+      endSeconds,
+      precise = true,
+    } = options;
     if (endSeconds <= startSeconds) {
       throw new Error(`Invalid clip range: ${startSeconds}..${endSeconds}`);
     }

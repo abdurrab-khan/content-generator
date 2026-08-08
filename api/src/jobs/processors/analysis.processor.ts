@@ -7,9 +7,16 @@ import { PipelineState } from '../../generated/prisma/client.js';
 import { AgentService } from '../../modules/agent/agent.service.js';
 import { ClipsService } from '../../modules/clips/clips.service.js';
 import { TranscriptsService } from '../../modules/transcripts/transcripts.service.js';
-import type { AnalyzeChunkJobData, AnalyzeProjectJobData } from '../job-data.types.js';
+import type {
+  AnalyzeChunkJobData,
+  AnalyzeProjectJobData,
+} from '../job-data.types.js';
 import { PipelineService } from '../pipeline.service.js';
-import { JOB_ANALYZE_CHUNK, JOB_ANALYZE_PROJECT, QUEUE_ANALYSIS } from '../queues.constants.js';
+import {
+  JOB_ANALYZE_CHUNK,
+  JOB_ANALYZE_PROJECT,
+  QUEUE_ANALYSIS,
+} from '../queues.constants.js';
 
 const CONCURRENCY = Number(process.env.ANALYSIS_CONCURRENCY) || 5;
 
@@ -53,7 +60,9 @@ export class AnalysisProcessor extends WorkerHost {
       const chunks = await this.transcripts.loadChunks(projectId);
       const chunk = chunks.find((candidate) => candidate.index === chunkIndex);
       if (!chunk) {
-        throw new Error(`Chunk ${chunkIndex} not found for project ${projectId}`);
+        throw new Error(
+          `Chunk ${chunkIndex} not found for project ${projectId}`,
+        );
       }
 
       const result = await this.agent.analyzeChunk({
@@ -62,7 +71,10 @@ export class AnalysisProcessor extends WorkerHost {
         projectDescription: project.description,
         chunk,
       });
-      this.logger.log(`Chunk ${chunkIndex} of ${projectId}: ${result.savedClips} clip(s) saved`);
+
+      this.logger.log(
+        `Chunk ${chunkIndex} of ${projectId}: ${result.savedClips} clip(s) saved`,
+      );
       return result;
     } catch (error) {
       // BullMQ flows: the parent only runs when ALL children complete.
@@ -80,7 +92,9 @@ export class AnalysisProcessor extends WorkerHost {
   /** Parent flow job: all chunk children are done — merge & dedupe. */
   private async finalizeProject(job: Job<AnalyzeProjectJobData>) {
     const { projectId } = job.data;
-    const childrenValues = await job.getChildrenValues<{ savedClips: number }>();
+    const childrenValues = await job.getChildrenValues<{
+      savedClips: number;
+    }>();
     const savedClips = Object.values(childrenValues).reduce(
       (total, value) => total + (value?.savedClips ?? 0),
       0,

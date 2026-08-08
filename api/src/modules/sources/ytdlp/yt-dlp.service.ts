@@ -5,7 +5,10 @@ import { ConfigService } from '@nestjs/config';
 import { execa } from 'execa';
 import { execFailureMessage } from '../../../common/utils/process.utils.js';
 import type { Env } from '../../../config/env.schema.js';
-import { isPermanentYtDlpFailure, SourceNotFoundError } from './yt-dlp.errors.js';
+import {
+  isPermanentYtDlpFailure,
+  SourceNotFoundError,
+} from './yt-dlp.errors.js';
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000; // downloads of 3h podcasts can be slow
 const DETAILS_TIMEOUT_MS = 60 * 1000;
@@ -50,7 +53,10 @@ export class YtDlpService {
    * Download manual subs, falling back to auto-generated subs (vtt).
    * Returns the produced .vtt path, or null when the video has none.
    */
-  async downloadSubtitles(url: string, destDir: string): Promise<string | null> {
+  async downloadSubtitles(
+    url: string,
+    destDir: string,
+  ): Promise<string | null> {
     const outputTemplate = path.join(destDir, 'transcript.%(ext)s');
     const args = [
       '--write-subs',
@@ -73,13 +79,18 @@ export class YtDlpService {
       await this.run(args, DEFAULT_TIMEOUT_MS);
     } catch (error) {
       // yt-dlp exits non-zero when no subtitles exist at all
-      if (error instanceof Error && /no subtitles|unable to download video subtitles/i.test(String(error))) {
+      if (
+        error instanceof Error &&
+        /no subtitles|unable to download video subtitles/i.test(String(error))
+      ) {
         return null;
       }
       throw error;
     }
 
-    const vtts = (await readdir(destDir)).filter((file) => file.endsWith('.vtt'));
+    const vtts = (await readdir(destDir)).filter((file) =>
+      file.endsWith('.vtt'),
+    );
     if (vtts.length === 0) return null;
     // Prefer manual subs over auto-generated when both exist
     const preferred = vtts.find((file) => !file.includes('.en-')) ?? vtts[0];
@@ -106,12 +117,15 @@ export class YtDlpService {
 
   private async run(args: string[], timeoutMs: number): Promise<string> {
     try {
-      const { stdout } = await execa(this.binaryPath, args, { timeout: timeoutMs });
+      const { stdout } = await execa(this.binaryPath, args, {
+        timeout: timeoutMs,
+      });
       return stdout;
     } catch (error) {
       const stderr = execFailureMessage(error);
       const firstLine =
-        stderr.split('\n').find((line) => line.trim().length > 0) ?? 'unknown error';
+        stderr.split('\n').find((line) => line.trim().length > 0) ??
+        'unknown error';
       if (isPermanentYtDlpFailure(stderr)) {
         throw new SourceNotFoundError(firstLine);
       }

@@ -24,7 +24,11 @@ export class VideosService {
   // ------------------------------------------------------------------ jobs
 
   /** Create the final Video record for a freshly cut clip. */
-  async createFromClip(clip: Clip, storagePath: string, durationSeconds: number): Promise<Video> {
+  async createFromClip(
+    clip: Clip,
+    storagePath: string,
+    durationSeconds: number,
+  ): Promise<Video> {
     const info = (clip.clipInfo ?? {}) as Record<string, unknown>;
     return this.prisma.video.create({
       data: {
@@ -43,7 +47,10 @@ export class VideosService {
 
   async findAllForUser(userId: string): Promise<Video[]> {
     return this.prisma.video.findMany({
-      where: { project: { application: { userId } }, status: RecordStatus.ACTIVE },
+      where: {
+        project: { application: { userId } },
+        status: RecordStatus.ACTIVE,
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -56,7 +63,10 @@ export class VideosService {
     return video;
   }
 
-  async getStreamForUser(userId: string, videoId: string): Promise<VideoStream> {
+  async getStreamForUser(
+    userId: string,
+    videoId: string,
+  ): Promise<VideoStream> {
     const video = await this.findOneForUser(userId, videoId);
     if (!video.storagePath) {
       throw new NotFoundException('Video file is not available yet');

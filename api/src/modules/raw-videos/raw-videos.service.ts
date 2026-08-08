@@ -12,7 +12,11 @@ export class RawVideosService {
 
   createForProject(
     projectId: string,
-    data: { title: string | null; description: string | null; podcastInfo: Prisma.InputJsonValue | undefined },
+    data: {
+      title: string | null;
+      description: string | null;
+      podcastInfo: Prisma.InputJsonValue | undefined;
+    },
   ): Promise<RawVideo> {
     return this.prisma.rawVideo.create({
       data: {
@@ -40,7 +44,10 @@ export class RawVideosService {
     });
   }
 
-  async findByProjectForUser(userId: string, projectId: string): Promise<RawVideo[]> {
+  async findByProjectForUser(
+    userId: string,
+    projectId: string,
+  ): Promise<RawVideo[]> {
     const owned = await this.prisma.project.findFirst({
       where: { id: projectId, application: { userId } },
       select: { id: true },

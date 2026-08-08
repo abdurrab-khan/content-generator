@@ -40,8 +40,7 @@ export class YoutubeProvider implements VideoSourceProvider {
       title: String(info.title ?? 'Untitled'),
       description: (info.description as string | undefined) ?? null,
       thumbnail: (info.thumbnail as string | undefined) ?? null,
-      durationSeconds:
-        typeof info.duration === 'number' ? info.duration : null,
+      durationSeconds: typeof info.duration === 'number' ? info.duration : null,
       channelName:
         (info.channel as string | undefined) ??
         (info.uploader as string | undefined) ??
@@ -60,7 +59,10 @@ export class YoutubeProvider implements VideoSourceProvider {
     };
   }
 
-  async downloadSubtitles(url: string, destDir: string): Promise<string | null> {
+  async downloadSubtitles(
+    url: string,
+    destDir: string,
+  ): Promise<string | null> {
     this.logger.log(`Fetching subtitles for ${url}`);
     return this.ytdlp.downloadSubtitles(url, destDir);
   }

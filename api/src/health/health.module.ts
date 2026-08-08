@@ -12,6 +12,10 @@ import {
 @Module({
   imports: [TerminusModule, SourcesModule, MediaModule],
   controllers: [HealthController],
-  providers: [DatabaseHealthIndicator, RedisHealthIndicator, BinariesHealthIndicator],
+  providers: [
+    DatabaseHealthIndicator,
+    RedisHealthIndicator,
+    BinariesHealthIndicator,
+  ],
 })
 export class HealthModule {}

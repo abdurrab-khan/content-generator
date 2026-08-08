@@ -8,10 +8,14 @@ import { z } from 'zod';
 export const extractedClipSchema = z.object({
   start: z
     .string()
-    .describe('Absolute start timestamp of the moment in the source video, HH:MM:SS'),
+    .describe(
+      'Absolute start timestamp of the moment in the source video, HH:MM:SS',
+    ),
   end: z
     .string()
-    .describe('Absolute end timestamp of the moment in the source video, HH:MM:SS'),
+    .describe(
+      'Absolute end timestamp of the moment in the source video, HH:MM:SS',
+    ),
   title: z.string().max(120).describe('Short catchy clip title'),
   hook: z
     .string()

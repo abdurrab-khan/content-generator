@@ -23,7 +23,11 @@ import { VideosModule } from './modules/videos/videos.module.js';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv, cache: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: validateEnv,
+      cache: true,
+    }),
     ScheduleModule.forRoot(),
     BullModule.forRootAsync({
       inject: [ConfigService],
@@ -53,4 +57,3 @@ import { VideosModule } from './modules/videos/videos.module.js';
   ],
 })
 export class AppModule {}
-

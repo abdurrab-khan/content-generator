@@ -12,9 +12,7 @@ import {
   type Project,
 } from '../../generated/prisma/client.js';
 import { PipelineService } from '../../jobs/pipeline.service.js';
-import {
-  ApplicationsService,
-} from '../applications/applications.service.js';
+import { ApplicationsService } from '../applications/applications.service.js';
 import { SourceRegistryService } from '../sources/source-registry.service.js';
 import type { CreateProjectDto, ListProjectsQuery } from './dto/project.dto.js';
 
@@ -58,7 +56,9 @@ export class ProjectsService {
       details = await provider.getDetails(dto.url);
     } catch (error) {
       this.logger.error(`Failed to fetch video details: ${error}`);
-      throw new BadGatewayException('Could not reach the video source, try again later.');
+      throw new BadGatewayException(
+        'Could not reach the video source, try again later.',
+      );
     }
     if (!details) {
       throw new NotFoundException('Video not found or unavailable.');
@@ -70,7 +70,8 @@ export class ProjectsService {
         sourceType: provider.type,
         sourceUrl: dto.url,
         title: details.title,
-        description: details.description?.slice(0, MAX_DESCRIPTION_LENGTH) ?? null,
+        description:
+          details.description?.slice(0, MAX_DESCRIPTION_LENGTH) ?? null,
         thumbnail: details.thumbnail,
         sourceVideoId: details.sourceVideoId,
         sourceInfo: details.raw,
@@ -79,14 +80,21 @@ export class ProjectsService {
     });
 
     await this.pipeline.startPipeline(project.id);
-    this.logger.log(`Project ${project.id} created, pipeline started (${dto.url})`);
+    this.logger.log(
+      `Project ${project.id} created, pipeline started (${dto.url})`,
+    );
     return project;
   }
 
   async findAllForUser(
     userId: string,
     query: ListProjectsQuery,
-  ): Promise<{ items: Project[]; total: number; page: number; pageSize: number }> {
+  ): Promise<{
+    items: Project[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }> {
     const where = {
       application: { userId },
       status: query.status ?? RecordStatus.ACTIVE,

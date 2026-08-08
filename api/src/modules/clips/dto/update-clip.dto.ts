@@ -6,8 +6,14 @@ export const updateClipSchema = z
     start: z.number().min(0).optional(),
     end: z.number().min(0).optional(),
   })
-  .refine((value) => value.title !== undefined || value.start !== undefined || value.end !== undefined, {
-    message: 'At least one field must be provided',
-  });
+  .refine(
+    (value) =>
+      value.title !== undefined ||
+      value.start !== undefined ||
+      value.end !== undefined,
+    {
+      message: 'At least one field must be provided',
+    },
+  );
 
 export type UpdateClipDto = z.infer<typeof updateClipSchema>;

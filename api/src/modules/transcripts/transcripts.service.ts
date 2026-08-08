@@ -30,7 +30,9 @@ export class TranscriptsService {
   async fetchAndChunk(
     projectId: string,
   ): Promise<{ transcriptPath: string; chunks: TranscriptChunk[] } | null> {
-    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
     if (!project) throw new NotFoundException(`Project ${projectId} not found`);
 
     const provider = this.sources.getProviderByType(project.sourceType);
@@ -40,8 +42,14 @@ export class TranscriptsService {
       );
     }
 
-    const destDir = await this.storage.ensureDir(StorageFolder.TRANSCRIPTS, projectId);
-    const vttPath = await provider.downloadSubtitles(project.sourceUrl, destDir);
+    const destDir = await this.storage.ensureDir(
+      StorageFolder.TRANSCRIPTS,
+      projectId,
+    );
+    const vttPath = await provider.downloadSubtitles(
+      project.sourceUrl,
+      destDir,
+    );
     if (!vttPath) {
       this.logger.warn(`No subtitles available for project ${projectId}`);
       return null;
@@ -64,7 +72,9 @@ export class TranscriptsService {
    * projectId + chunkIndex — analysis workers call this to get the text.
    */
   async loadChunks(projectId: string): Promise<TranscriptChunk[]> {
-    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
     if (!project?.transcriptPath) {
       throw new NotFoundException(`Project ${projectId} has no transcript`);
     }
@@ -76,6 +86,7 @@ export class TranscriptsService {
         `Transcript for project ${projectId} parsed to zero cues`,
       );
     }
+
     return this.chunking.chunkCues(cues);
   }
 }

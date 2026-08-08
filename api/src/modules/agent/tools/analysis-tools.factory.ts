@@ -49,7 +49,8 @@ export class AnalysisToolsFactory {
         }),
       {
         name: 'get_project_context',
-        description: 'Get the podcast title/description and the current chunk window.',
+        description:
+          'Get the podcast title/description and the current chunk window.',
         schema: z.object({}),
       },
     );
@@ -64,20 +65,27 @@ export class AnalysisToolsFactory {
         if (end <= start) {
           return 'ERROR: end must be after start.';
         }
-        if (start < context.chunkStartSeconds - 60 || end > context.chunkEndSeconds + 60) {
+        if (
+          start < context.chunkStartSeconds - 60 ||
+          end > context.chunkEndSeconds + 60
+        ) {
           return `ERROR: clip must be inside the chunk window ${secondsToTimestamp(
             context.chunkStartSeconds,
           )} - ${secondsToTimestamp(context.chunkEndSeconds)}.`;
         }
 
-        await this.clips.createFromAgent(context.projectId, context.chunkIndex, {
-          start,
-          end,
-          title: input.title,
-          hook: input.hook,
-          viralityScore: input.viralityScore,
-          reason: input.reason,
-        });
+        await this.clips.createFromAgent(
+          context.projectId,
+          context.chunkIndex,
+          {
+            start,
+            end,
+            title: input.title,
+            hook: input.hook,
+            viralityScore: input.viralityScore,
+            reason: input.reason,
+          },
+        );
         savedCount += 1;
         this.logger.log(
           `Clip saved: ${secondsToTimestamp(start)}-${secondsToTimestamp(end)} ` +
@@ -94,6 +102,9 @@ export class AnalysisToolsFactory {
       },
     );
 
-    return { tools: [getProjectContext, saveClip], getSavedCount: () => savedCount };
+    return {
+      tools: [getProjectContext, saveClip],
+      getSavedCount: () => savedCount,
+    };
   }
 }

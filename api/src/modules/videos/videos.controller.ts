@@ -24,7 +24,10 @@ export class VideosController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get one video' })
-  findOne(@Session() session: UserSession, @Param('id', ParseUUIDPipe) id: string) {
+  findOne(
+    @Session() session: UserSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.videos.findOneForUser(session.user.id, id);
   }
 

@@ -25,7 +25,8 @@ export class ClipCuttingCron {
   constructor(
     private readonly clips: ClipsService,
     private readonly prisma: PrismaService,
-    @InjectQueue(QUEUE_CLIP_CUTTING) private readonly cuttingQueue: Queue<CutClipJobData>,
+    @InjectQueue(QUEUE_CLIP_CUTTING)
+    private readonly cuttingQueue: Queue<CutClipJobData>,
   ) {}
 
   @Cron(CRON_EXPRESSION)

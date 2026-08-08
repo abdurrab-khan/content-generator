@@ -22,12 +22,17 @@ export class ClipsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get one clip by id' })
-  findOne(@Session() session: UserSession, @Param('id', ParseUUIDPipe) id: string) {
+  findOne(
+    @Session() session: UserSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.clips.findOneForUser(session.user.id, id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Edit a clip (title/start/end); edits schedule a re-cut' })
+  @ApiOperation({
+    summary: 'Edit a clip (title/start/end); edits schedule a re-cut',
+  })
   update(
     @Session() session: UserSession,
     @Param('id', ParseUUIDPipe) id: string,
@@ -39,7 +44,10 @@ export class ClipsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a clip' })
-  async remove(@Session() session: UserSession, @Param('id', ParseUUIDPipe) id: string) {
+  async remove(
+    @Session() session: UserSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     await this.clips.removeForUser(session.user.id, id);
   }
 }

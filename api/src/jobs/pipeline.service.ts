@@ -4,7 +4,10 @@ import type { Queue } from 'bullmq';
 import { PrismaService } from '../database/prisma.service.js';
 import { PipelineState, type Prisma } from '../generated/prisma/client.js';
 import { RawVideosService } from '../modules/raw-videos/raw-videos.service.js';
-import type { TranscriptJobData, VideoDownloadJobData } from './job-data.types.js';
+import type {
+  TranscriptJobData,
+  VideoDownloadJobData,
+} from './job-data.types.js';
 import {
   JOB_DOWNLOAD_VIDEO,
   JOB_FETCH_TRANSCRIPT,
@@ -21,7 +24,8 @@ export class PipelineService {
   private readonly logger = new Logger(PipelineService.name);
 
   constructor(
-    @InjectQueue(QUEUE_TRANSCRIPT) private readonly transcriptQueue: Queue<TranscriptJobData>,
+    @InjectQueue(QUEUE_TRANSCRIPT)
+    private readonly transcriptQueue: Queue<TranscriptJobData>,
     @InjectQueue(QUEUE_VIDEO_DOWNLOAD)
     private readonly videoDownloadQueue: Queue<VideoDownloadJobData>,
     private readonly prisma: PrismaService,

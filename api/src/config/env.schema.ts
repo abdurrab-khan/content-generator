@@ -5,17 +5,22 @@ import { z } from 'zod';
  * The app refuses to boot with an invalid configuration (fail fast).
  */
 export const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   REDIS_HOST: z.string().min(1).default('localhost'),
   REDIS_PORT: z.coerce.number().int().positive().default(6379),
 
-  BETTER_AUTH_SECRET: z.string().min(32, 'BETTER_AUTH_SECRET must be at least 32 characters'),
+  BETTER_AUTH_SECRET: z
+    .string()
+    .min(32, 'BETTER_AUTH_SECRET must be at least 32 characters'),
   BETTER_AUTH_URL: z.url().default('http://localhost:3000'),
 
-  DEEPSEEK_API_KEY: z.string().default(''),
+  MODEL_BASE_URL: z.string().default(''),
+  MODEL_API_KEY: z.string().default(''),
   AI_MODEL: z.string().default('deepseek-chat'),
   AI_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.3),
 

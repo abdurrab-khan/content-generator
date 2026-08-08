@@ -36,9 +36,16 @@ export class TransformInterceptor implements NestInterceptor {
         if (payload instanceof StreamableFile) return payload;
         if (payload === null || payload === undefined) return { data: payload };
 
-        if (typeof payload === 'object' && 'items' in payload && 'total' in payload) {
+        if (
+          typeof payload === 'object' &&
+          'items' in payload &&
+          'total' in payload
+        ) {
           const { items, total, ...rest } = payload as Record<string, unknown>;
-          return { data: items, meta: { total, ...rest } } satisfies ApiEnvelope<unknown>;
+          return {
+            data: items,
+            meta: { total, ...rest },
+          } satisfies ApiEnvelope<unknown>;
         }
 
         return { data: payload } satisfies ApiEnvelope<unknown>;

@@ -16,7 +16,10 @@ export class ApplicationsService {
     });
   }
 
-  async findOwnedOrThrow(userId: string, applicationId: string): Promise<Application> {
+  async findOwnedOrThrow(
+    userId: string,
+    applicationId: string,
+  ): Promise<Application> {
     const application = await this.prisma.application.findFirst({
       where: { id: applicationId, userId },
     });
@@ -31,7 +34,10 @@ export class ApplicationsService {
     });
   }
 
-  createForUser(userId: string, dto: CreateApplicationDto): Promise<Application> {
+  createForUser(
+    userId: string,
+    dto: CreateApplicationDto,
+  ): Promise<Application> {
     return this.prisma.application.create({
       data: { userId, name: dto.name, description: dto.description },
     });

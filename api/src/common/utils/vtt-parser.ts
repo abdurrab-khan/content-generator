@@ -52,9 +52,12 @@ export function parseVtt(content: string): TranscriptCue[] {
       .map((line) => line.trim())
       .filter(Boolean);
     if (lines.length === 0) continue;
-    if (SKIP_BLOCK_PREFIXES.some((prefix) => lines[0].startsWith(prefix))) continue;
+    if (SKIP_BLOCK_PREFIXES.some((prefix) => lines[0].startsWith(prefix)))
+      continue;
 
-    const timingLineIndex = lines.findIndex((line) => TIMING_LINE_REGEX.test(line));
+    const timingLineIndex = lines.findIndex((line) =>
+      TIMING_LINE_REGEX.test(line),
+    );
     if (timingLineIndex === -1) continue;
 
     const timing = TIMING_LINE_REGEX.exec(lines[timingLineIndex]);

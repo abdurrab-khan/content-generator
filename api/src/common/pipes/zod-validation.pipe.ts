@@ -12,9 +12,9 @@ import { z } from 'zod';
  * Usage: `@Body(new ZodValidationPipe(createProjectSchema)) dto: CreateProjectDto`
  */
 @Injectable()
-export class ZodValidationPipe<Schema extends z.ZodType>
-  implements PipeTransform<unknown, z.infer<Schema>>
-{
+export class ZodValidationPipe<
+  Schema extends z.ZodType,
+> implements PipeTransform<unknown, z.infer<Schema>> {
   constructor(private readonly schema: Schema) {}
 
   transform(value: unknown, metadata: ArgumentMetadata): z.infer<Schema> {

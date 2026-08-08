@@ -26,7 +26,9 @@ export class ClipCuttingProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<CutClipJobData>): Promise<{ clipPath: string } | undefined> {
+  async process(
+    job: Job<CutClipJobData>,
+  ): Promise<{ clipPath: string } | undefined> {
     const { clipId } = job.data;
     const clip = await this.prisma.clip.findUnique({
       where: { id: clipId },
@@ -36,7 +38,8 @@ export class ClipCuttingProcessor extends WorkerHost {
       this.logger.warn(`Clip ${clipId} no longer exists — skipping`);
       return undefined;
     }
-    if (clip.state === ClipState.READY) return { clipPath: clip.clipPath ?? '' };
+    if (clip.state === ClipState.READY)
+      return { clipPath: clip.clipPath ?? '' };
     if (!clip.project.videoPath) {
       throw new Error(`Project ${clip.projectId} has no downloaded video yet`);
     }
@@ -45,7 +48,10 @@ export class ClipCuttingProcessor extends WorkerHost {
 
     const inputAbsolute = this.storage.resolve(clip.project.videoPath);
     await this.storage.ensureDir(StorageFolder.CLIPS);
-    const outputAbsolute = this.storage.resolve(StorageFolder.CLIPS, `${clip.id}.mp4`);
+    const outputAbsolute = this.storage.resolve(
+      StorageFolder.CLIPS,
+      `${clip.id}.mp4`,
+    );
 
     try {
       await this.ffmpeg.cutClip({
@@ -67,7 +73,9 @@ export class ClipCuttingProcessor extends WorkerHost {
     await this.clips.markState([clip.id], ClipState.READY, relative);
     await this.videos.createFromClip(clip, relative, clip.end - clip.start);
 
-    const unfinished = await this.clips.countUnfinishedByProject(clip.projectId);
+    const unfinished = await this.clips.countUnfinishedByProject(
+      clip.projectId,
+    );
     if (unfinished === 0) {
       await this.prisma.project.update({
         where: { id: clip.projectId },

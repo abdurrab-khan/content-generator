@@ -26,7 +26,9 @@ export class VideoDownloadProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<VideoDownloadJobData>): Promise<{ videoPath: string }> {
+  async process(
+    job: Job<VideoDownloadJobData>,
+  ): Promise<{ videoPath: string }> {
     const { projectId } = job.data;
     const project = await this.prisma.project.findUniqueOrThrow({
       where: { id: projectId },
@@ -43,7 +45,10 @@ export class VideoDownloadProcessor extends WorkerHost {
     });
 
     await this.storage.ensureDir(StorageFolder.VIDEOS);
-    const outputAbsolute = this.storage.resolve(StorageFolder.VIDEOS, `${projectId}.mp4`);
+    const outputAbsolute = this.storage.resolve(
+      StorageFolder.VIDEOS,
+      `${projectId}.mp4`,
+    );
 
     try {
       await provider.downloadVideo(project.sourceUrl, outputAbsolute);

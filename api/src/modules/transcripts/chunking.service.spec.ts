@@ -6,7 +6,11 @@ import { ChunkingService } from './chunking.service.js';
 function makeCues(durationSeconds: number): TranscriptCue[] {
   const cues: TranscriptCue[] = [];
   for (let start = 0; start < durationSeconds; start += 5) {
-    cues.push({ startSeconds: start, endSeconds: start + 5, text: `cue at ${start}` });
+    cues.push({
+      startSeconds: start,
+      endSeconds: start + 5,
+      text: `cue at ${start}`,
+    });
   }
   return cues;
 }

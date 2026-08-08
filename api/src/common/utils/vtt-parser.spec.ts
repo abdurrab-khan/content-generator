@@ -45,7 +45,9 @@ describe('parseVtt', () => {
   it('collapses consecutive duplicate texts (auto-sub rolling artifact)', () => {
     const cues = parseVtt(SAMPLE);
     const texts = cues.map((cue) => cue.text);
-    expect(texts.filter((text) => text === 'to the show & friends')).toHaveLength(1);
+    expect(
+      texts.filter((text) => text === 'to the show & friends'),
+    ).toHaveLength(1);
   });
 
   it('strips karaoke timestamps and tags', () => {

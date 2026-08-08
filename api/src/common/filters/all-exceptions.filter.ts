@@ -23,14 +23,21 @@ interface ErrorBody {
  *  - P2003 foreign key        -> 409
  *  - P2025 record not found   -> 404
  */
-function mapPrismaError(
-  exception: { code: string; meta?: { modelName?: string } },
-): { status: number; message: string } | null {
+function mapPrismaError(exception: {
+  code: string;
+  meta?: { modelName?: string };
+}): { status: number; message: string } | null {
   switch (exception.code) {
     case 'P2002':
-      return { status: HttpStatus.CONFLICT, message: 'Resource already exists' };
+      return {
+        status: HttpStatus.CONFLICT,
+        message: 'Resource already exists',
+      };
     case 'P2003':
-      return { status: HttpStatus.CONFLICT, message: 'Related resource constraint violation' };
+      return {
+        status: HttpStatus.CONFLICT,
+        message: 'Related resource constraint violation',
+      };
     case 'P2025': {
       const model = exception.meta?.modelName ?? 'Resource';
       return { status: HttpStatus.NOT_FOUND, message: `${model} not found` };
@@ -83,7 +90,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = mapped.message;
         error = 'PrismaError';
       } else {
-        this.logger.error(`Unhandled Prisma error ${exception.code}`, undefined);
+        this.logger.error(
+          `Unhandled Prisma error ${exception.code}`,
+          undefined,
+        );
       }
     } else if (
       typeof exception === 'object' &&

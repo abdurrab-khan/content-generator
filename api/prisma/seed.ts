@@ -22,7 +22,9 @@ async function main(): Promise<void> {
 
   let user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    const result = await auth.api.signUpEmail({ body: { email, password, name } });
+    const result = await auth.api.signUpEmail({
+      body: { email, password, name },
+    });
     user = await prisma.user.findUniqueOrThrow({ where: { email } });
     console.log(`Created user ${result.user.email} (${user.id})`);
   } else {
@@ -37,16 +39,21 @@ async function main(): Promise<void> {
       data: {
         userId: user.id,
         name: DEFAULT_APPLICATION_NAME,
-        description: 'Generate viral short clips from long-form podcast videos.',
+        description:
+          'Generate viral short clips from long-form podcast videos.',
       },
     });
     console.log(`Created application "${created.name}" (${created.id})`);
   } else {
-    console.log(`Application "${DEFAULT_APPLICATION_NAME}" already exists (${application.id})`);
+    console.log(
+      `Application "${DEFAULT_APPLICATION_NAME}" already exists (${application.id})`,
+    );
   }
 
   console.log('\nSeed complete. Sign in with:');
-  console.log(`  POST /api/auth/sign-in/email  { "email": "${email}", "password": "<DEV_USER_PASSWORD>" }`);
+  console.log(
+    `  POST /api/auth/sign-in/email  { "email": "${email}", "password": "<DEV_USER_PASSWORD>" }`,
+  );
 }
 
 main()

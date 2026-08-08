@@ -41,7 +41,11 @@ export class ClipsService {
     candidate: AgentClipCandidate,
   ): Promise<Clip> {
     const duration = candidate.end - candidate.start;
-    if (candidate.start < 0 || duration < MIN_CLIP_SECONDS || duration > MAX_CLIP_SECONDS) {
+    if (
+      candidate.start < 0 ||
+      duration < MIN_CLIP_SECONDS ||
+      duration > MAX_CLIP_SECONDS
+    ) {
       throw new BadRequestException(
         `Clip range ${candidate.start}-${candidate.end} outside allowed duration ` +
           `${MIN_CLIP_SECONDS}-${MAX_CLIP_SECONDS}s`,
@@ -83,14 +87,17 @@ export class ClipsService {
         id: clip.id,
         start: clip.start,
         end: clip.end,
-        viralityScore: typeof info.viralityScore === 'number' ? info.viralityScore : 0,
+        viralityScore:
+          typeof info.viralityScore === 'number' ? info.viralityScore : 0,
         chunkIndex: typeof info.chunkIndex === 'number' ? info.chunkIndex : 0,
       };
     });
 
     const duplicateIds = findDuplicateClipIds(withScores);
     if (duplicateIds.length > 0) {
-      await this.prisma.clip.deleteMany({ where: { id: { in: duplicateIds } } });
+      await this.prisma.clip.deleteMany({
+        where: { id: { in: duplicateIds } },
+      });
       this.logger.log(
         `Deduped ${duplicateIds.length} overlapping clip(s) for project ${projectId}`,
       );
@@ -100,7 +107,10 @@ export class ClipsService {
 
   // ------------------------------------------------------------------ http
 
-  async findByProjectForUser(userId: string, projectId: string): Promise<Clip[]> {
+  async findByProjectForUser(
+    userId: string,
+    projectId: string,
+  ): Promise<Clip[]> {
     await this.assertProjectOwnership(userId, projectId);
     return this.prisma.clip.findMany({
       where: { projectId },
@@ -119,7 +129,11 @@ export class ClipsService {
     return clip;
   }
 
-  async updateForUser(userId: string, clipId: string, dto: UpdateClipDto): Promise<Clip> {
+  async updateForUser(
+    userId: string,
+    clipId: string,
+    dto: UpdateClipDto,
+  ): Promise<Clip> {
     const clip = await this.findOneForUser(userId, clipId);
     const start = dto.start ?? clip.start;
     const end = dto.end ?? clip.end;
@@ -152,7 +166,11 @@ export class ClipsService {
 
   // ------------------------------------------------------------------ jobs
 
-  async markState(clipIds: string[], state: ClipState, clipPath?: string | null): Promise<void> {
+  async markState(
+    clipIds: string[],
+    state: ClipState,
+    clipPath?: string | null,
+  ): Promise<void> {
     await this.prisma.clip.updateMany({
       where: { id: { in: clipIds } },
       data: { state, ...(clipPath !== undefined ? { clipPath } : {}) },
@@ -182,12 +200,17 @@ export class ClipsService {
     return this.prisma.clip.count({
       where: {
         projectId,
-        state: { in: [ClipState.NOT_STARTED, ClipState.PENDING, ClipState.CUTTING] },
+        state: {
+          in: [ClipState.NOT_STARTED, ClipState.PENDING, ClipState.CUTTING],
+        },
       },
     });
   }
 
-  private async assertProjectOwnership(userId: string, projectId: string): Promise<void> {
+  private async assertProjectOwnership(
+    userId: string,
+    projectId: string,
+  ): Promise<void> {
     const project = await this.prisma.project.findFirst({
       where: { id: projectId, application: { userId } },
       select: { id: true },

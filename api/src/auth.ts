@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { betterAuth } from 'better-auth';
+import { bearer } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from './generated/prisma/client.js';
 
@@ -34,6 +35,7 @@ export const auth = betterAuth({
     'http://localhost:3000',
     'http://localhost:5173', // future frontend (vite)
   ],
+  plugins: [bearer()],
 });
 
 export type Auth = typeof auth;

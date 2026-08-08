@@ -18,7 +18,11 @@ function overlapRatio(a: ClipDedupeInput, b: ClipDedupeInput): number {
   return shorter <= 0 ? 0 : overlap / shorter;
 }
 
-function isDuplicate(a: ClipDedupeInput, b: ClipDedupeInput, toleranceSeconds: number): boolean {
+function isDuplicate(
+  a: ClipDedupeInput,
+  b: ClipDedupeInput,
+  toleranceSeconds: number,
+): boolean {
   const edgesAlign =
     Math.abs(a.start - b.start) <= toleranceSeconds &&
     Math.abs(a.end - b.end) <= toleranceSeconds;

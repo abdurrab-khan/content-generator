@@ -16,7 +16,10 @@ describe('ZodValidationPipe', () => {
       { url: 'https://www.youtube.com/watch?v=x', limit: '5' },
       { type: 'body' },
     );
-    expect(result).toEqual({ url: 'https://www.youtube.com/watch?v=x', limit: 5 });
+    expect(result).toEqual({
+      url: 'https://www.youtube.com/watch?v=x',
+      limit: 5,
+    });
   });
 
   it('throws BadRequestException with issues on invalid input', () => {

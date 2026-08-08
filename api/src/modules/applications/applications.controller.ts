@@ -22,10 +22,13 @@ export class ApplicationsController {
 
   @Post()
   @ApiOperation({ summary: 'Create an application' })
-  @ApiBody({ schema: z.toJSONSchema(createApplicationSchema) as Record<string, unknown> })
+  @ApiBody({
+    schema: z.toJSONSchema(createApplicationSchema) as Record<string, unknown>,
+  })
   create(
     @Session() session: UserSession,
-    @Body(new ZodValidationPipe(createApplicationSchema)) dto: CreateApplicationDto,
+    @Body(new ZodValidationPipe(createApplicationSchema))
+    dto: CreateApplicationDto,
   ) {
     return this.applications.createForUser(session.user.id, dto);
   }

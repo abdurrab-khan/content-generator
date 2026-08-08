@@ -38,7 +38,9 @@ export class ProjectsController {
       'Fetches video details synchronously (404 when unavailable), then runs ' +
       'transcript/download/analysis/cutting in the background.',
   })
-  @ApiBody({ schema: z.toJSONSchema(createProjectSchema) as Record<string, unknown> })
+  @ApiBody({
+    schema: z.toJSONSchema(createProjectSchema) as Record<string, unknown>,
+  })
   create(
     @Session() session: UserSession,
     @Body(new ZodValidationPipe(createProjectSchema)) dto: CreateProjectDto,
@@ -50,27 +52,39 @@ export class ProjectsController {
   @ApiOperation({ summary: 'List my projects (paginated)' })
   findAll(
     @Session() session: UserSession,
-    @Query(new ZodValidationPipe(listProjectsQuerySchema)) query: ListProjectsQuery,
+    @Query(new ZodValidationPipe(listProjectsQuerySchema))
+    query: ListProjectsQuery,
   ) {
     return this.projects.findAllForUser(session.user.id, query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Project detail incl. clips, raw videos and outputs' })
-  findOne(@Session() session: UserSession, @Param('id', ParseUUIDPipe) id: string) {
+  @ApiOperation({
+    summary: 'Project detail incl. clips, raw videos and outputs',
+  })
+  findOne(
+    @Session() session: UserSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.projects.findOneForUser(session.user.id, id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft-delete a project (moves to bin)' })
-  async remove(@Session() session: UserSession, @Param('id', ParseUUIDPipe) id: string) {
+  async remove(
+    @Session() session: UserSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     await this.projects.removeForUser(session.user.id, id);
   }
 
   @Get(':id/clips')
   @ApiOperation({ summary: 'List clips of a project' })
-  findClips(@Session() session: UserSession, @Param('id', ParseUUIDPipe) id: string) {
+  findClips(
+    @Session() session: UserSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.clips.findByProjectForUser(session.user.id, id);
   }
 }

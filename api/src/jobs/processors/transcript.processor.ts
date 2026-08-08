@@ -54,7 +54,10 @@ export class TranscriptProcessor extends WorkerHost {
         children: result.chunks.map((chunk) => ({
           name: JOB_ANALYZE_CHUNK,
           queueName: QUEUE_ANALYSIS,
-          data: { projectId, chunkIndex: chunk.index } satisfies AnalyzeChunkJobData,
+          data: {
+            projectId,
+            chunkIndex: chunk.index,
+          } satisfies AnalyzeChunkJobData,
           opts: {
             attempts: 2,
             backoff: { type: 'exponential', delay: 10_000 },
@@ -70,7 +73,9 @@ export class TranscriptProcessor extends WorkerHost {
         data: { pipelineState: PipelineState.ANALYZING },
       });
 
-      this.logger.log(`Project ${projectId}: fanned out ${result.chunks.length} chunk(s)`);
+      this.logger.log(
+        `Project ${projectId}: fanned out ${result.chunks.length} chunk(s)`,
+      );
       return { chunks: result.chunks.length };
     } catch (error) {
       const lastAttempt = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);

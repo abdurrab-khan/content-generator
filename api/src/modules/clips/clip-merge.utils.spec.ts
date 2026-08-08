@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { findDuplicateClipIds, type ClipDedupeInput } from './clip-merge.utils.js';
+import {
+  findDuplicateClipIds,
+  type ClipDedupeInput,
+} from './clip-merge.utils.js';
 
-function clip(partial: Partial<ClipDedupeInput> & { id: string }): ClipDedupeInput {
+function clip(
+  partial: Partial<ClipDedupeInput> & { id: string },
+): ClipDedupeInput {
   return { start: 0, end: 60, viralityScore: 50, chunkIndex: 0, ...partial };
 }
 
@@ -32,8 +37,20 @@ describe('findDuplicateClipIds', () => {
 
   it('resolves score ties in favor of the earlier chunk', () => {
     const dupes = findDuplicateClipIds([
-      clip({ id: 'later', start: 100, end: 160, viralityScore: 90, chunkIndex: 3 }),
-      clip({ id: 'earlier', start: 102, end: 158, viralityScore: 90, chunkIndex: 1 }),
+      clip({
+        id: 'later',
+        start: 100,
+        end: 160,
+        viralityScore: 90,
+        chunkIndex: 3,
+      }),
+      clip({
+        id: 'earlier',
+        start: 102,
+        end: 158,
+        viralityScore: 90,
+        chunkIndex: 1,
+      }),
     ]);
     expect(dupes).toEqual(['later']);
   });
