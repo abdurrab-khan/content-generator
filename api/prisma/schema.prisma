@@ -1,0 +1,234 @@
+// Content Generator — Prisma schema
+// ER model: users (better-auth), applications, projects, clips, raw_videos, videos
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Better Auth managed tables (do not rename fields — adapter expects them)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String        @id
+  name          String
+  email         String        @unique
+  emailVerified Boolean       @default(false) @map("email_verified")
+  image         String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  sessions      Session[]
+  accounts      Account[]
+  applications  Application[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime @map("expires_at")
+  token     String   @unique
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("verifications")
+}
+
+// ---------------------------------------------------------------------------
+// Domain enums
+// ---------------------------------------------------------------------------
+
+/// Record lifecycle (bin = soft deleted, recoverable)
+enum RecordStatus {
+  ACTIVE
+  BIN
+  DELETED
+  ERROR
+}
+
+/// Furthest milestone of the processing pipeline (informational —
+/// transcript & video tracks progress in parallel and are tracked
+/// independently via `transcriptPath` / `videoPath` presence).
+enum PipelineState {
+  CREATED
+  DETAILS_FETCHED
+  FETCHING_TRANSCRIPT
+  TRANSCRIPT_READY
+  ANALYZING
+  CLIPS_READY
+  DOWNLOADING_VIDEO
+  VIDEO_READY
+  CUTTING
+  COMPLETED
+  FAILED
+}
+
+enum SourceType {
+  YOUTUBE
+  TWITCH
+  UPLOAD
+}
+
+enum ClipState {
+  NOT_STARTED
+  PENDING
+  CUTTING
+  READY
+  FAILED
+}
+
+enum DownloadState {
+  DOWNLOADING
+  DOWNLOADED
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// Domain models
+// ---------------------------------------------------------------------------
+
+/// An "application" is a content idea (e.g. "podcast-clips"). Future ideas
+/// (AI scene videos, merged shorts, ...) are new rows, not new code paths.
+model Application {
+  id          String    @id @default(uuid()) @map("application_id")
+  name        String
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects    Project[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("applications")
+}
+
+model Project {
+  id             String        @id @default(uuid()) @map("project_id")
+  title          String?
+  description    String?
+  thumbnail      String?
+  status         RecordStatus  @default(ACTIVE)
+  pipelineState  PipelineState @default(CREATED) @map("pipeline_state")
+  sourceType     SourceType    @default(YOUTUBE) @map("source_type")
+  sourceUrl      String        @map("source_url")
+  sourceVideoId  String?       @map("source_video_id")
+  /// Provider-specific metadata (yt-dlp info JSON, twitch VOD info, ...)
+  sourceInfo     Json?         @map("source_info")
+  transcriptPath String?       @map("transcript_path")
+  videoPath      String?       @map("video_path")
+  errorMessage   String?       @map("error_message")
+  applicationId  String        @map("application_id")
+  application    Application   @relation(fields: [applicationId], references: [id])
+  clips          Clip[]
+  rawVideos      RawVideo[]
+  videos         Video[]
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@index([applicationId])
+  @@map("projects")
+}
+
+model Clip {
+  id        String    @id @default(uuid()) @map("clip_id")
+  /// seconds from the start of the source video
+  start     Float
+  /// seconds from the start of the source video
+  end       Float
+  state     ClipState @default(NOT_STARTED)
+  /// { title, hook, viralityScore, reason, chunkIndex }
+  clipInfo  Json?     @map("clip_info")
+  clipPath  String?   @map("clip_path")
+  projectId String    @map("project_id")
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([projectId])
+  @@map("clips")
+}
+
+/// Downloaded source material. In the podcast flow there is exactly one raw
+/// video per project; future flows (merged shorts, AI scene videos) will
+/// have many raw videos feeding one final Video.
+model RawVideo {
+  id            String        @id @default(uuid()) @map("raw_video_id")
+  title         String?
+  description   String?
+  tags          String[]
+  videoPath     String?       @map("video_path")
+  podcastInfo   Json?         @map("podcast_info")
+  status        RecordStatus  @default(ACTIVE)
+  downloadState DownloadState @default(DOWNLOADING) @map("download_state")
+  /// Future: the final Video this raw material contributed to (multi-clip merges)
+  videoId       String?       @map("video_id")
+  projectId     String        @map("project_id")
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@index([projectId])
+  @@map("raw_videos")
+}
+
+/// Produced output (a cut clip today; a merged/AI video tomorrow).
+model Video {
+  id          String       @id @default(uuid()) @map("video_id")
+  title       String?
+  description String?
+  tags        String[]
+  status      RecordStatus @default(ACTIVE)
+  storagePath String?      @map("storage_path")
+  /// duration in seconds
+  duration    Float?
+  /// Traceability: which clip produced this video (podcast flow)
+  clipId      String?      @map("clip_id")
+  projectId   String       @map("project_id")
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@index([projectId])
+  @@map("videos")
+}
+
