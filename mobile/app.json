@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "ClipForge",
+    "slug": "clipforge",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "clipforge",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#08080E",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.clipforge.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#08080E",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-video",
+      "expo-image",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#08080E",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 128
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow ClipForge to access your gallery.",
+          "savePhotosPermission": "Allow ClipForge to save videos to your gallery.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
+    ]
+  }
+}

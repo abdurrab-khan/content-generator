@@ -79,6 +79,32 @@ export class ProjectsController {
     await this.projects.removeForUser(session.user.id, id);
   }
 
+  @Post(':id/restore')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Restore a project from the bin (back to active)' })
+  restore(
+    @Session() session: UserSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.projects.restoreForUser(session.user.id, id);
+  }
+
+  @Delete(':id/permanent')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Permanently delete a binned project',
+    description:
+      'Hard-deletes the project row (cascades to clips, raw videos and ' +
+      'videos) and removes the files from storage. Only allowed when the ' +
+      'project is in the bin.',
+  })
+  async removePermanently(
+    @Session() session: UserSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    await this.projects.permanentlyDeleteForUser(session.user.id, id);
+  }
+
   @Get(':id/clips')
   @ApiOperation({ summary: 'List clips of a project' })
   findClips(

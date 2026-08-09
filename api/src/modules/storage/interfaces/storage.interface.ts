@@ -29,6 +29,10 @@ export interface IStorageService {
   createReadStream(absolutePath: string): Readable;
   sizeBytes(absolutePath: string): Promise<number>;
   remove(absolutePath: string): Promise<void>;
+  /** Removes a directory only when empty (shared dirs fail harmlessly). */
+  removeDirIfEmpty(absolutePath: string): Promise<void>;
+  /** Recursively removes a directory tree (e.g. a per-project folder). */
+  removeDirRecursive(absolutePath: string): Promise<void>;
   /** Path relative to the storage root (what we persist in the DB). */
   relative(absolutePath: string): string;
 }

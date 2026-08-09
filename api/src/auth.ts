@@ -34,6 +34,10 @@ export const auth = betterAuth({
     process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
     'http://localhost:3000',
     'http://localhost:5173', // future frontend (vite)
+    // ClipForge mobile app — React Native keeps a cookie jar, so once a
+    // session cookie exists, better-auth's CSRF guard requires a trusted
+    // Origin on auth POSTs. The app sends "Origin: clipforge://".
+    'clipforge://',
   ],
   plugins: [bearer()],
 });
