@@ -11,15 +11,12 @@ importers:
       '@langchain/core':
         specifier: ^1.2.5
         version: 1.2.5(openai@6.49.0(zod@4.4.3))
-      '@langchain/groq':
-        specifier: ^1.3.1
-        version: 1.3.1(@langchain/core@1.2.5(openai@6.49.0(zod@4.4.3)))
       '@langchain/langgraph':
         specifier: ^1.4.9
         version: 1.4.9(@langchain/core@1.2.5(openai@6.49.0(zod@4.4.3)))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@4.4.3)
-      '@langchain/openai':
-        specifier: ^1.5.6
-        version: 1.5.6(@langchain/core@1.2.5(openai@6.49.0(zod@4.4.3)))
+      '@langchain/openrouter':
+        specifier: ^0.4.6
+        version: 0.4.6(@langchain/core@1.2.5(openai@6.49.0(zod@4.4.3)))(zod@4.4.3)
       '@nestjs/bullmq':
         specifier: ^11.0.5
         version: 11.0.5(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(bullmq@6.0.9(ioredis@6.0.0)(pg@8.22.0))
@@ -717,12 +714,6 @@ packages:
     resolution: {integrity: sha512-4lXj3fTPQYGdEtOG9gWDnvmp6wpXNMo9MmWzfZxxPUxMcjulZJa93pYAZ90luFLg2YVdVuUl2tuwdD7tY5K9MA==}
     engines: {node: '>=20'}
 
-  '@langchain/groq@1.3.1':
-    resolution: {integrity: sha512-ImxfGBis4FEHpZdeT6dot6V6l09uBLYm/1BHQ6x3XEQmJFF7aKwbOeSOV5h/h5IeRx+2gaInR+LfyYoqT8satQ==}
-    engines: {node: '>=20'}
-    peerDependencies:
-      '@langchain/core': ^1.1.30
-
   '@langchain/langgraph-checkpoint@1.1.3':
     resolution: {integrity: sha512-wgzdQNeEsdw1e+4lvlj0tdq/RYR/k1vPin10g0ymGoehZDDgd9nvIllGXSXN4TFgF9sf5qQP/KTkOcLfeseIhA==}
     engines: {node: '>=18'}
@@ -759,6 +750,12 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       '@langchain/core': ^1.2.5
+
+  '@langchain/openrouter@0.4.6':
+    resolution: {integrity: sha512-uroLlkk1R6x/JJhiONCs2zdQub2S/NzUIjq0/1LNo2hpAFjro9m7DycFajuYDvl/7n8YsschxaI1lg243JM3Dg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@langchain/core': ^1.0.0
 
   '@langchain/protocol@0.0.18':
     resolution: {integrity: sha512-XW1egQtPfsGI41w2AMZNFZrUIwFSQHTjVMZs0OaTpCAvht/QLoaPN8FQcsysMVypOhupG28J29yOorrc70otBQ==}
@@ -2392,6 +2389,10 @@ packages:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
     engines: {node: '>=0.8.x'}
 
+  eventsource-parser@3.1.0:
+    resolution: {integrity: sha512-kJezFj9YFAMLeORyi7aCLxLbD5/qWMQnoMVlVPyHIll7lgRJCc3JVln9Vgl9nwQi0YkMnhdGTMNn7CkRRAptMg==}
+    engines: {node: '>=18.0.0'}
+
   execa@8.0.1:
     resolution: {integrity: sha512-VyhnebXciFV2DESc+p6B+y0LjSm0krU4OgJN44qFAhBY0TJ+1V61tYD2+wHusZ6F9n5K+vl8k0sTy7PEfV4qpg==}
     engines: {node: '>=16.17'}
@@ -2566,10 +2567,6 @@ packages:
 
   graphmatch@1.1.1:
     resolution: {integrity: sha512-5ykVn/EXM1hF0XCaWh05VbYvEiOL2lY1kBxZtaYsyvjp7cmWOU1XsAdfQBwClraEofXDT197lFbXOEVMHpvQOg==}
-
-  groq-sdk@1.5.0:
-    resolution: {integrity: sha512-aa5yaMVd8kehBacU3Pp7roObOuPksZNau+nPW+GDDB7OV/8jybVzeeOv54lZj8owNNIc3a7Tu2eYI7/kIwtMNw==}
-    hasBin: true
 
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
@@ -4424,11 +4421,6 @@ snapshots:
       - openai
       - ws
 
-  '@langchain/groq@1.3.1(@langchain/core@1.2.5(openai@6.49.0(zod@4.4.3)))':
-    dependencies:
-      '@langchain/core': 1.2.5(openai@6.49.0(zod@4.4.3))
-      groq-sdk: 1.5.0
-
   '@langchain/langgraph-checkpoint@1.1.3(@langchain/core@1.2.5(openai@6.49.0(zod@4.4.3)))':
     dependencies:
       '@langchain/core': 1.2.5(openai@6.49.0(zod@4.4.3))
@@ -4469,6 +4461,19 @@ snapshots:
       - '@smithy/hash-node'
       - '@smithy/signature-v4'
       - ws
+
+  '@langchain/openrouter@0.4.6(@langchain/core@1.2.5(openai@6.49.0(zod@4.4.3)))(zod@4.4.3)':
+    dependencies:
+      '@langchain/core': 1.2.5(openai@6.49.0(zod@4.4.3))
+      '@langchain/openai': 1.5.6(@langchain/core@1.2.5(openai@6.49.0(zod@4.4.3)))
+      eventsource-parser: 3.1.0
+      openai: 6.49.0(zod@4.4.3)
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-provider-node'
+      - '@smithy/hash-node'
+      - '@smithy/signature-v4'
+      - ws
+      - zod
 
   '@langchain/protocol@0.0.18': {}
 
@@ -6046,6 +6051,8 @@ snapshots:
 
   events@3.3.0: {}
 
+  eventsource-parser@3.1.0: {}
+
   execa@8.0.1:
     dependencies:
       cross-spawn: 7.0.6
@@ -6267,8 +6274,6 @@ snapshots:
   grammex@3.1.13: {}
 
   graphmatch@1.1.1: {}
-
-  groq-sdk@1.5.0: {}
 
   has-flag@4.0.0: {}
 
