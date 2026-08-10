@@ -39,10 +39,7 @@ export class VideoDownloadProcessor extends WorkerHost {
       throw new Error(`No provider for source type ${project.sourceType}`);
     }
 
-    await this.prisma.project.update({
-      where: { id: projectId },
-      data: { pipelineState: PipelineState.DOWNLOADING_VIDEO },
-    });
+    await this.advanceState(projectId, PipelineState.DOWNLOADING_VIDEO);
 
     await this.storage.ensureDir(StorageFolder.VIDEOS);
     const outputAbsolute = this.storage.resolve(
@@ -67,11 +64,38 @@ export class VideoDownloadProcessor extends WorkerHost {
     const relative = this.storage.relative(outputAbsolute);
     await this.prisma.project.update({
       where: { id: projectId },
-      data: { videoPath: relative, pipelineState: PipelineState.VIDEO_READY },
+      data: { videoPath: relative },
     });
+    await this.advanceState(projectId, PipelineState.VIDEO_READY);
     await this.rawVideos.markDownloaded(projectId, relative);
 
     this.logger.log(`Project ${projectId}: video downloaded -> ${relative}`);
     return { videoPath: relative };
+  }
+
+  /**
+   * The video and analysis tracks share one informational `pipelineState`.
+   * Analysis-complete milestones (CLIPS_READY and beyond) must survive a
+   * late-finishing download: the clip-cutting cron only opens its gate on
+   * CLIPS_READY, so regressing the state here would stall cutting forever.
+   */
+  private async advanceState(
+    projectId: string,
+    state: PipelineState,
+  ): Promise<void> {
+    await this.prisma.project.updateMany({
+      where: {
+        id: projectId,
+        pipelineState: {
+          notIn: [
+            PipelineState.CLIPS_READY,
+            PipelineState.CUTTING,
+            PipelineState.COMPLETED,
+            PipelineState.FAILED,
+          ],
+        },
+      },
+      data: { pipelineState: state },
+    });
   }
 }
