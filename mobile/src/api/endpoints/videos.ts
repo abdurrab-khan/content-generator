@@ -16,3 +16,11 @@ export async function getVideo(id: string): Promise<Video> {
 export function videoStreamUrl(id: string): string {
   return `${API_URL}/videos/${id}/stream`;
 }
+
+/**
+ * Permanently delete a video — removes the row and its file. When the clip
+ * it was cut from shares the same file, the clip is deleted too (API-side).
+ */
+export async function deleteVideo(id: string): Promise<void> {
+  await apiFetch<void>(`/videos/${id}`, { method: 'DELETE' });
+}

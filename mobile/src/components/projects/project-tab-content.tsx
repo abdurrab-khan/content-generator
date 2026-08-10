@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import type { ProjectDetail } from '../../api/types';
+import type { ProjectDetail, Video } from '../../api/types';
 import type { MediaKind } from '../player/video-player-screen';
 import { ClipCard } from '../clips/clip-card';
 import { RawVideoCard } from '../raw-videos/raw-video-card';
@@ -14,10 +14,19 @@ export interface ProjectTabContentProps {
   project: ProjectDetail;
   tab: ProjectTabKey;
   onPlay: (mediaId: string, kind: MediaKind, title: string) => void;
+  onDeleteVideo: (video: Video) => void;
 }
 
-export function ProjectTabContent({ project, tab, onPlay }: ProjectTabContentProps) {
+export function ProjectTabContent({ project, tab, onPlay, onDeleteVideo }: ProjectTabContentProps) {
   const readyVideos = project.videos.filter((video) => video.status === 'ACTIVE');
+
+  // Videos carry no score themselves — it lives on the producing clip
+  // (clipInfo.viralityScore), linked via video.clipId.
+  const scoreByClipId = new Map<string, number>();
+  for (const clip of project.clips) {
+    const score = clip.clipInfo?.viralityScore;
+    if (typeof score === 'number') scoreByClipId.set(clip.id, score);
+  }
 
   if (tab === 'clips') {
     return (
@@ -52,6 +61,8 @@ export function ProjectTabContent({ project, tab, onPlay }: ProjectTabContentPro
             video={video}
             poster={project.thumbnail}
             onPlay={() => onPlay(video.id, 'video', video.title ?? 'Video')}
+            onDelete={() => onDeleteVideo(video)}
+            viralityScore={video.clipId ? (scoreByClipId.get(video.clipId) ?? null) : null}
           />
         ))}
       </TabSection>

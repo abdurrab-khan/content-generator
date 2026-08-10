@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Readable } from 'node:stream';
 import { PrismaService } from '../../database/prisma.service.js';
 import {
@@ -16,6 +16,8 @@ export interface VideoStream {
 
 @Injectable()
 export class VideosService {
+  private readonly logger = new Logger(VideosService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: LocalStorageService,
@@ -80,5 +82,46 @@ export class VideosService {
       sizeBytes: await this.storage.sizeBytes(absolute),
       filename: `${video.title?.replace(/[^\w\- ]/g, '').trim() || video.id}.mp4`,
     };
+  }
+
+  /**
+   * Permanently delete a produced video: removes the DB row and its file.
+   *
+   * In the podcast flow the video and the clip it was cut from share one
+   * physical file (clipPath === storagePath). A clip cannot outlive its
+   * file, so when they share it the clip row is deleted too — otherwise the
+   * clip keeps its own file and stays valid.
+   */
+  async removeForUser(userId: string, videoId: string): Promise<void> {
+    const video = await this.findOneForUser(userId, videoId);
+
+    const linkedClip = video.clipId
+      ? await this.prisma.clip.findUnique({ where: { id: video.clipId } })
+      : null;
+    const clipSharesFile =
+      linkedClip !== null &&
+      video.storagePath !== null &&
+      linkedClip.clipPath === video.storagePath;
+
+    await this.prisma.$transaction([
+      this.prisma.video.delete({ where: { id: video.id } }),
+      ...(clipSharesFile
+        ? [this.prisma.clip.delete({ where: { id: linkedClip.id } })]
+        : []),
+    ]);
+
+    if (video.storagePath) {
+      try {
+        await this.storage.remove(this.storage.resolve(video.storagePath));
+      } catch (error) {
+        this.logger.warn(
+          `Failed to remove video file "${video.storagePath}": ${error}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `Video ${videoId} deleted${clipSharesFile ? ` (with clip ${linkedClip.id})` : ''}`,
+    );
   }
 }

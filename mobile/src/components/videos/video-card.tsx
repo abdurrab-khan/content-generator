@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,10 +11,11 @@ import { Card } from '../ui/card';
 import { CopyableText } from '../ui/copyable-text';
 import { MediaActions } from '../ui/media-actions';
 import { TagChip } from '../ui/tag-chip';
+import { ViralityBadge } from '../ui/virality-badge';
 
 /**
  * Final ready-video card — poster with play overlay + duration, copyable
- * title/description/tags, save-to-gallery action.
+ * title/description/tags, save-to-gallery action, permanent delete.
  */
 
 export interface VideoCardProps {
@@ -22,11 +23,27 @@ export interface VideoCardProps {
   /** Project thumbnail used as poster art (API has no per-video thumbs). */
   poster: string | null;
   onPlay: () => void;
+  /** Permanently delete this video (and the clip it was cut from). */
+  onDelete?: () => void;
+  /** Virality score of the clip this video was cut from (0–10). */
+  viralityScore?: number | null;
 }
 
-export function VideoCard({ video, poster, onPlay }: VideoCardProps) {
+export function VideoCard({ video, poster, onPlay, onDelete, viralityScore }: VideoCardProps) {
   const title = video.title ?? 'Untitled video';
   const playable = video.storagePath !== null;
+
+  const confirmDelete = () => {
+    if (!onDelete) return;
+    Alert.alert(
+      'Delete video?',
+      `"${title}" will be permanently deleted, along with the clip it was cut from. This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: onDelete },
+      ],
+    );
+  };
 
   return (
     <Card padded={false}>
@@ -50,6 +67,11 @@ export function VideoCard({ video, poster, onPlay }: VideoCardProps) {
             colors={[...gradients.thumbnailScrim]}
             style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
           />
+          {viralityScore != null ? (
+            <View style={{ position: 'absolute', top: 10, left: 10 }}>
+              <ViralityBadge score={viralityScore} onImage />
+            </View>
+          ) : null}
           <View
             style={{
               position: 'absolute',
@@ -122,6 +144,16 @@ export function VideoCard({ video, poster, onPlay }: VideoCardProps) {
           />
           <View style={{ flex: 1 }} />
           <AppText variant="caption">{formatRelativeDate(video.createdAt)}</AppText>
+          {onDelete ? (
+            <Pressable
+              onPress={confirmDelete}
+              hitSlop={10}
+              accessibilityLabel="Delete video"
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+            >
+              <Ionicons name="trash-outline" size={17} color={colors.danger} />
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </Card>
