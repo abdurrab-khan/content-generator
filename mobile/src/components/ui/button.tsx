@@ -1,14 +1,15 @@
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from "expo-linear-gradient";
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
+  TouchableOpacity,
   View,
   type StyleProp,
   type ViewStyle,
-} from 'react-native';
-import { colors, gradients, radii } from '../../theme';
-import { AppText } from './app-text';
+} from "react-native";
+import { colors, gradients, radii } from "../../theme";
+import { AppText } from "./app-text";
 
 /**
  * Button variants:
@@ -18,8 +19,8 @@ import { AppText } from './app-text';
  *  - danger: tinted red surface
  */
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps {
   label: string;
@@ -33,7 +34,10 @@ export interface ButtonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const sizeStyles: Record<ButtonSize, { height: number; paddingHorizontal: number; textSize: number }> = {
+const sizeStyles: Record<
+  ButtonSize,
+  { height: number; paddingHorizontal: number; textSize: number }
+> = {
   sm: { height: 36, paddingHorizontal: 14, textSize: 13 },
   md: { height: 48, paddingHorizontal: 20, textSize: 15 },
   lg: { height: 56, paddingHorizontal: 24, textSize: 16 },
@@ -42,8 +46,8 @@ const sizeStyles: Record<ButtonSize, { height: number; paddingHorizontal: number
 export function Button({
   label,
   onPress,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   loading = false,
   disabled = false,
   icon,
@@ -56,7 +60,10 @@ export function Button({
   const content = (
     <View style={styles.content}>
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#fff' : colors.textMuted} size="small" />
+        <ActivityIndicator
+          color={variant === "primary" ? "#fff" : colors.textMuted}
+          size="small"
+        />
       ) : (
         <>
           {icon}
@@ -65,11 +72,11 @@ export function Button({
             style={{
               fontSize: textSize,
               color:
-                variant === 'primary'
-                  ? '#fff'
-                  : variant === 'danger'
+                variant === "primary"
+                  ? "#fff"
+                  : variant === "danger"
                     ? colors.danger
-                    : variant === 'ghost'
+                    : variant === "ghost"
                       ? colors.textMuted
                       : colors.text,
             }}
@@ -82,23 +89,23 @@ export function Button({
   );
 
   return (
-    <Pressable
+    <TouchableOpacity
+      activeOpacity={0.8}
       accessibilityRole="button"
       disabled={isDisabled}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={[
         {
           height,
           borderRadius: radii.lg,
-          overflow: 'hidden',
-          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
-          alignSelf: fullWidth ? 'stretch' : 'flex-start',
-          transform: [{ scale: pressed ? 0.98 : 1 }],
+          overflow: "hidden",
+          opacity: isDisabled ? 0.5 : 1,
+          alignSelf: fullWidth ? "stretch" : "flex-start",
         },
         style,
       ]}
     >
-      {variant === 'primary' ? (
+      {variant === "primary" ? (
         <LinearGradient
           colors={[...gradients.primary]}
           start={{ x: 0, y: 0 }}
@@ -114,12 +121,12 @@ export function Button({
             {
               paddingHorizontal,
               backgroundColor:
-                variant === 'secondary'
+                variant === "secondary"
                   ? colors.cardAlt
-                  : variant === 'danger'
-                    ? 'rgba(248,113,113,0.12)'
-                    : 'transparent',
-              borderWidth: variant === 'secondary' ? 1 : 0,
+                  : variant === "danger"
+                    ? "rgba(248,113,113,0.12)"
+                    : "transparent",
+              borderWidth: variant === "secondary" ? 1 : 0,
               borderColor: colors.borderStrong,
             },
           ]}
@@ -127,20 +134,20 @@ export function Button({
           {content}
         </View>
       )}
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   fill: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
   },
 });

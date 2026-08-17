@@ -1,20 +1,20 @@
-import { apiFetch } from '../http';
+import { apiFetch } from "../http";
 import type {
   ListResult,
   PaginationMeta,
   Project,
   ProjectDetail,
   RecordStatus,
-} from '../types';
+} from "../types";
 
 export async function listProjects(input: {
   status?: RecordStatus;
   page?: number;
   pageSize?: number;
 }): Promise<ListResult<Project>> {
-  const { data, meta } = await apiFetch<Project[]>('/projects', {
+  const { data, meta } = await apiFetch<Project[]>("/projects", {
     query: {
-      status: input.status ?? 'ACTIVE',
+      status: input.status ?? "ACTIVE",
       page: input.page ?? 1,
       pageSize: input.pageSize ?? 100,
     },
@@ -26,8 +26,8 @@ export async function createProject(input: {
   url: string;
   applicationId?: string;
 }): Promise<Project> {
-  const { data } = await apiFetch<Project>('/projects', {
-    method: 'POST',
+  const { data } = await apiFetch<Project>("/projects", {
+    method: "POST",
     body: input,
   });
   return data;
@@ -40,7 +40,7 @@ export async function getProject(id: string): Promise<ProjectDetail> {
 
 /** Soft delete — moves the project to the bin (recoverable). */
 export async function deleteProject(id: string): Promise<void> {
-  await apiFetch<void>(`/projects/${id}`, { method: 'DELETE' });
+  await apiFetch<void>(`/projects/${id}`, { method: "DELETE" });
 }
 
 /**
@@ -49,13 +49,13 @@ export async function deleteProject(id: string): Promise<void> {
  * the files from storage. Cannot be undone.
  */
 export async function deleteProjectPermanently(id: string): Promise<void> {
-  await apiFetch<void>(`/projects/${id}/permanent`, { method: 'DELETE' });
+  await apiFetch<void>(`/projects/${id}/permanent`, { method: "DELETE" });
 }
 
 /** Restore a binned project back to ACTIVE (bin-only). */
 export async function restoreProject(id: string): Promise<Project> {
   const { data } = await apiFetch<Project>(`/projects/${id}/restore`, {
-    method: 'POST',
+    method: "POST",
   });
   return data;
 }
