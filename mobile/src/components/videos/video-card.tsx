@@ -1,17 +1,17 @@
-import { Alert, Pressable, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { videoStreamUrl } from '../../api/endpoints/videos';
-import type { Video } from '../../api/types';
-import { formatDuration, formatRelativeDate } from '../../lib/format';
-import { colors, gradients, radii } from '../../theme';
-import { AppText } from '../ui/app-text';
-import { Card } from '../ui/card';
-import { CopyableText } from '../ui/copyable-text';
-import { MediaActions } from '../ui/media-actions';
-import { TagChip } from '../ui/tag-chip';
-import { ViralityBadge } from '../ui/virality-badge';
+import { Alert, Pressable, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { videoStreamUrl } from "../../api/endpoints/videos";
+import type { Video } from "../../api/types";
+import { formatDuration, formatRelativeDate } from "../../lib/format";
+import { colors, gradients, radii } from "../../theme";
+import { AppText } from "../ui/app-text";
+import { Card } from "../ui/card";
+import { CopyableText } from "../ui/copyable-text";
+import { MediaActions } from "../ui/media-actions";
+import { TagChip } from "../ui/tag-chip";
+import { ViralityBadge } from "../ui/virality-badge";
 
 /**
  * Final ready-video card — poster with play overlay + duration, copyable
@@ -29,58 +29,76 @@ export interface VideoCardProps {
   viralityScore?: number | null;
 }
 
-export function VideoCard({ video, poster, onPlay, onDelete, viralityScore }: VideoCardProps) {
-  const title = video.title ?? 'Untitled video';
+export function VideoCard({
+  video,
+  poster,
+  onPlay,
+  onDelete,
+  viralityScore,
+}: VideoCardProps) {
+  const title = video.title ?? "Untitled video";
   const playable = video.storagePath !== null;
 
   const confirmDelete = () => {
     if (!onDelete) return;
     Alert.alert(
-      'Delete video?',
+      "Delete video?",
       `"${title}" will be permanently deleted, along with the clip it was cut from. This cannot be undone.`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: onDelete },
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: onDelete },
       ],
     );
   };
 
   return (
     <Card padded={false}>
-      <Pressable
+      <TouchableOpacity
+        activeOpacity={0.9}
         accessibilityRole="button"
         accessibilityLabel={`Play ${title}`}
         onPress={onPlay}
         disabled={!playable}
-        style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
       >
         <View style={{ aspectRatio: 16 / 9, backgroundColor: colors.cardAlt }}>
           {poster ? (
             <Image
               source={{ uri: poster }}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+              }}
               contentFit="cover"
               transition={200}
             />
           ) : null}
           <LinearGradient
             colors={[...gradients.thumbnailScrim]}
-            style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0,
+            }}
           />
           {viralityScore != null ? (
-            <View style={{ position: 'absolute', top: 10, left: 10 }}>
+            <View style={{ position: "absolute", top: 10, left: 10 }}>
               <ViralityBadge score={viralityScore} onImage />
             </View>
           ) : null}
           <View
             style={{
-              position: 'absolute',
+              position: "absolute",
               top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              alignItems: 'center',
-              justifyContent: 'center',
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <View
@@ -88,36 +106,49 @@ export function VideoCard({ video, poster, onPlay, onDelete, viralityScore }: Vi
                 width: 54,
                 height: 54,
                 borderRadius: 27,
-                backgroundColor: 'rgba(139,92,246,0.9)',
-                alignItems: 'center',
-                justifyContent: 'center',
+                backgroundColor: "rgba(139,92,246,0.9)",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              <Ionicons name="play" size={24} color="#fff" style={{ marginLeft: 2 }} />
+              <Ionicons
+                name="play"
+                size={24}
+                color="#fff"
+                style={{ marginLeft: 2 }}
+              />
             </View>
           </View>
           {video.duration != null ? (
             <View
               style={{
-                position: 'absolute',
+                position: "absolute",
                 bottom: 10,
                 right: 10,
-                backgroundColor: 'rgba(0,0,0,0.65)',
+                backgroundColor: "rgba(0,0,0,0.65)",
                 borderRadius: radii.sm,
                 paddingHorizontal: 7,
                 paddingVertical: 3,
               }}
             >
-              <AppText variant="caption" style={{ color: '#fff', fontSize: 11 }}>
+              <AppText
+                variant="caption"
+                style={{ color: "#fff", fontSize: 11 }}
+              >
                 {formatDuration(video.duration)}
               </AppText>
             </View>
           ) : null}
         </View>
-      </Pressable>
+      </TouchableOpacity>
 
       <View style={{ padding: 14, gap: 10 }}>
-        <CopyableText value={title} copyLabel="Title copied" variant="subheading" numberOfLines={2} />
+        <CopyableText
+          value={title}
+          copyLabel="Title copied"
+          variant="subheading"
+          numberOfLines={2}
+        />
 
         {video.description ? (
           <CopyableText
@@ -129,30 +160,32 @@ export function VideoCard({ video, poster, onPlay, onDelete, viralityScore }: Vi
         ) : null}
 
         {video.tags.length > 0 ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             {video.tags.map((tag) => (
               <TagChip key={tag} tag={tag} />
             ))}
           </View>
         ) : null}
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <MediaActions
             streamUrl={playable ? videoStreamUrl(video.id) : null}
             filename={title}
             onPlay={onPlay}
           />
           <View style={{ flex: 1 }} />
-          <AppText variant="caption">{formatRelativeDate(video.createdAt)}</AppText>
+          <AppText variant="caption">
+            {formatRelativeDate(video.createdAt)}
+          </AppText>
           {onDelete ? (
-            <Pressable
+            <TouchableOpacity
+              activeOpacity={0.6}
               onPress={confirmDelete}
               hitSlop={10}
               accessibilityLabel="Delete video"
-              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
             >
               <Ionicons name="trash-outline" size={17} color={colors.danger} />
-            </Pressable>
+            </TouchableOpacity>
           ) : null}
         </View>
       </View>

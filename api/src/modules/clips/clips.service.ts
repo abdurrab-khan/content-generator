@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../../database/prisma.service.js';
 import {
   ClipState,
+  PipelineState,
   RecordStatus,
   type Clip,
   type Prisma,
@@ -61,6 +62,21 @@ export class ClipsService {
         `Clip range ${candidate.start}-${candidate.end} outside allowed duration ` +
           `${MIN_CLIP_SECONDS}-${MAX_CLIP_SECONDS}s`,
       );
+    }
+
+    // Idempotency guard: BullMQ retries re-run the same chunk analysis (and a
+    // transcript-job retry can re-fan-out the flow), so the agent reports the
+    // same moment again with identical start/end. Reuse the existing row
+    // instead of storing a duplicate.
+    const existing = await this.prisma.clip.findFirst({
+      where: { projectId, start: candidate.start, end: candidate.end },
+    });
+    if (existing) {
+      this.logger.log(
+        `Clip ${candidate.start}-${candidate.end} already saved for project ` +
+          `${projectId} — reusing ${existing.id}`,
+      );
+      return existing;
     }
 
     const clipInfo: Prisma.InputJsonValue = {
@@ -162,7 +178,7 @@ export class ClipsService {
         clipInfo: {
           ...info,
           ...(dto.title ? { title: dto.title } : {}),
-        } as Prisma.InputJsonValue,
+        },
         // user edits force a re-cut
         state: rangeChanged ? ClipState.NOT_STARTED : clip.state,
         clipPath: rangeChanged ? null : clip.clipPath,
@@ -207,7 +223,11 @@ export class ClipsService {
     });
   }
 
-  /** Clips the cron should pick up: pending cut, video downloaded. */
+  /**
+   * Clips the cron should pick up: pending cut, video downloaded, and — crucially
+   * — analysis finished. Sweeping mid-analysis would cut duplicates before the
+   * fan-in dedupe (which runs in the parent analysis job) ever sees them.
+   */
   async findCuttableClips(take = 25): Promise<Clip[]> {
     return this.prisma.clip.findMany({
       where: {
@@ -215,6 +235,9 @@ export class ClipsService {
         project: {
           status: RecordStatus.ACTIVE,
           videoPath: { not: null },
+          pipelineState: {
+            in: [PipelineState.CLIPS_READY, PipelineState.CUTTING],
+          },
         },
       },
       orderBy: { createdAt: 'asc' },

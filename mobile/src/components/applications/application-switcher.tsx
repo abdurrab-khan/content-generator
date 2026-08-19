@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAppStore } from '../../store/app-store';
-import { colors, gradients, radii } from '../../theme';
-import type { Application } from '../../api/types';
-import { AppText } from '../ui/app-text';
-import { Sheet } from '../ui/sheet';
-import { CreateApplicationForm } from './create-application-form';
+import { useState } from "react";
+import { Pressable, ScrollView, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useAppStore } from "../../store/app-store";
+import { colors, gradients, radii } from "../../theme";
+import type { Application } from "../../api/types";
+import { AppText } from "../ui/app-text";
+import { Sheet } from "../ui/sheet";
+import { CreateApplicationForm } from "./create-application-form";
 
 /**
  * Header pill that shows the active application and opens a bottom sheet to
@@ -19,26 +19,30 @@ export interface ApplicationSwitcherProps {
   selected: Application;
 }
 
-export function ApplicationSwitcher({ applications, selected }: ApplicationSwitcherProps) {
+export function ApplicationSwitcher({
+  applications,
+  selected,
+}: ApplicationSwitcherProps) {
   const setSelectedId = useAppStore((state) => state.setSelectedApplicationId);
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<'list' | 'create'>('list');
+  const [mode, setMode] = useState<"list" | "create">("list");
 
   const close = () => {
     setOpen(false);
-    setMode('list');
+    setMode("list");
   };
 
   return (
     <>
-      <Pressable
+      <TouchableOpacity
         accessibilityRole="button"
+        activeOpacity={0.8}
         accessibilityLabel={`Current application: ${selected.name}. Tap to switch.`}
         onPress={() => setOpen(true)}
-        style={({ pressed }) => ({
-          flexDirection: 'row',
-          alignItems: 'center',
+        style={{
           gap: 8,
+          flexDirection: "row",
+          alignItems: "center",
           backgroundColor: colors.card,
           borderWidth: 1,
           borderColor: colors.borderStrong,
@@ -46,10 +50,9 @@ export function ApplicationSwitcher({ applications, selected }: ApplicationSwitc
           paddingLeft: 6,
           paddingRight: 12,
           paddingVertical: 5,
-          opacity: pressed ? 0.8 : 1,
-          alignSelf: 'flex-start',
-          maxWidth: '100%',
-        })}
+          alignSelf: "flex-start",
+          maxWidth: 200,
+        }}
       >
         <LinearGradient
           colors={[...gradients.primary]}
@@ -59,24 +62,28 @@ export function ApplicationSwitcher({ applications, selected }: ApplicationSwitc
             width: 26,
             height: 26,
             borderRadius: radii.full,
-            alignItems: 'center',
-            justifyContent: 'center',
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <Ionicons name="apps" size={13} color="#fff" />
         </LinearGradient>
-        <AppText variant="label" style={{ color: colors.text, flexShrink: 1 }} numberOfLines={1}>
+        <AppText
+          variant="label"
+          style={{ color: colors.text, flexShrink: 1 }}
+          numberOfLines={1}
+        >
           {selected.name}
         </AppText>
         <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
-      </Pressable>
+      </TouchableOpacity>
 
       <Sheet
         visible={open}
         onClose={close}
-        title={mode === 'list' ? 'Switch application' : 'New application'}
+        title={mode === "list" ? "Switch application" : "New application"}
       >
-        {mode === 'list' ? (
+        {mode === "list" ? (
           <ApplicationList
             applications={applications}
             selected={selected}
@@ -84,7 +91,7 @@ export function ApplicationSwitcher({ applications, selected }: ApplicationSwitc
               setSelectedId(id);
               close();
             }}
-            onCreateNew={() => setMode('create')}
+            onCreateNew={() => setMode("create")}
           />
         ) : (
           <CreateApplicationForm
@@ -106,32 +113,39 @@ interface ApplicationListProps {
   onCreateNew: () => void;
 }
 
-function ApplicationList({ applications, selected, onSelect, onCreateNew }: ApplicationListProps) {
+function ApplicationList({
+  applications,
+  selected,
+  onSelect,
+  onCreateNew,
+}: ApplicationListProps) {
   return (
     <View style={{ gap: 6 }}>
-      <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ maxHeight: 320 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={{ gap: 6 }}>
           {applications.map((app) => {
             const isActive = app.id === selected.id;
             return (
-              <Pressable
+              <TouchableOpacity
                 key={app.id}
                 accessibilityRole="button"
+                activeOpacity={0.8}
                 onPress={() => onSelect(app.id)}
-                style={({ pressed }) => ({
-                  flexDirection: 'row',
-                  alignItems: 'center',
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
                   gap: 12,
                   padding: 14,
                   borderRadius: radii.lg,
                   borderWidth: 1,
                   borderColor: isActive ? colors.primary : colors.border,
                   backgroundColor: isActive
-                    ? 'rgba(139,92,246,0.12)'
-                    : pressed
-                      ? colors.cardAlt
-                      : 'transparent',
-                })}
+                    ? "rgba(139,92,246,0.12)"
+                    : colors.cardAlt,
+                }}
               >
                 <View
                   style={{
@@ -139,16 +153,23 @@ function ApplicationList({ applications, selected, onSelect, onCreateNew }: Appl
                     height: 34,
                     borderRadius: radii.md,
                     backgroundColor: isActive ? colors.primary : colors.cardAlt,
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  <AppText variant="subheading" style={{ color: '#fff', fontSize: 15 }}>
+                  <AppText
+                    variant="subheading"
+                    style={{ color: "#fff", fontSize: 15 }}
+                  >
                     {app.name.slice(0, 1).toUpperCase()}
                   </AppText>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <AppText variant="label" style={{ color: colors.text }} numberOfLines={1}>
+                  <AppText
+                    variant="label"
+                    style={{ color: colors.text }}
+                    numberOfLines={1}
+                  >
                     {app.name}
                   </AppText>
                   {app.description ? (
@@ -158,36 +179,40 @@ function ApplicationList({ applications, selected, onSelect, onCreateNew }: Appl
                   ) : null}
                 </View>
                 {isActive ? (
-                  <Ionicons name="checkmark-circle" size={18} color={colors.primaryBright} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={18}
+                    color={colors.primaryBright}
+                  />
                 ) : null}
-              </Pressable>
+              </TouchableOpacity>
             );
           })}
         </View>
       </ScrollView>
 
-      <Pressable
-        accessibilityRole="button"
+      <TouchableOpacity
+        activeOpacity={0.8}
         onPress={onCreateNew}
-        style={({ pressed }) => ({
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
+        accessibilityRole="button"
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
           gap: 8,
           padding: 14,
           borderRadius: radii.lg,
           borderWidth: 1.5,
-          borderStyle: 'dashed',
+          borderStyle: "dashed",
           borderColor: colors.borderStrong,
-          opacity: pressed ? 0.7 : 1,
           marginTop: 4,
-        })}
+        }}
       >
         <Ionicons name="add" size={18} color={colors.primaryBright} />
         <AppText variant="label" style={{ color: colors.primaryBright }}>
           New application
         </AppText>
-      </Pressable>
+      </TouchableOpacity>
     </View>
   );
 }

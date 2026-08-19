@@ -47,6 +47,9 @@ export class TranscriptProcessor extends WorkerHost {
         return { chunks: 0 };
       }
 
+      // Deterministic jobIds make the fan-out idempotent: if this job is
+      // retried after the flow was already added, BullMQ dedupes by jobId
+      // instead of analyzing every chunk (and re-saving every clip) twice.
       await this.flowProducer.add({
         name: JOB_ANALYZE_PROJECT,
         queueName: QUEUE_ANALYSIS,
@@ -59,13 +62,18 @@ export class TranscriptProcessor extends WorkerHost {
             chunkIndex: chunk.index,
           } satisfies AnalyzeChunkJobData,
           opts: {
+            jobId: `analyze-${projectId}-chunk-${chunk.index}`,
             attempts: 2,
             backoff: { type: 'exponential', delay: 10_000 },
             removeOnComplete: 100,
             removeOnFail: 500,
           },
         })),
-        opts: { removeOnComplete: 100, removeOnFail: 500 },
+        opts: {
+          jobId: `analyze-${projectId}`,
+          removeOnComplete: 100,
+          removeOnFail: 500,
+        },
       });
 
       await this.prisma.project.update({

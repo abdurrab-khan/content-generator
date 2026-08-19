@@ -1,8 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Pressable, View } from 'react-native';
-import { useMediaDownload } from '../../lib/use-media-download';
-import { colors, fonts, radii } from '../../theme';
-import { AppText } from './app-text';
+import { Ionicons } from "@expo/vector-icons";
+import {
+  ActivityIndicator,
+  Pressable,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useMediaDownload } from "../../lib/use-media-download";
+import { colors, fonts, radii } from "../../theme";
+import { AppText } from "./app-text";
 
 /**
  * Play + download action row shared by clip / video / raw-video cards.
@@ -18,41 +23,51 @@ export interface MediaActionsProps {
   pendingLabel?: string;
 }
 
-export function MediaActions({ streamUrl, filename, onPlay, pendingLabel }: MediaActionsProps) {
+export function MediaActions({
+  streamUrl,
+  filename,
+  onPlay,
+  pendingLabel,
+}: MediaActionsProps) {
   const { progress, downloading, start } = useMediaDownload();
   const ready = streamUrl !== null;
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <Pressable
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <TouchableOpacity
+        activeOpacity={0.7}
         accessibilityRole="button"
         disabled={!ready}
         onPress={onPlay}
-        style={({ pressed }) => ({
-          flexDirection: 'row',
-          alignItems: 'center',
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
           gap: 6,
           height: 36,
           paddingHorizontal: 16,
           borderRadius: radii.full,
           backgroundColor: ready ? colors.primary : colors.cardAlt,
-          opacity: pressed ? 0.85 : ready ? 1 : 0.6,
-        })}
+          opacity: ready ? 1 : 0.6,
+        }}
       >
         <Ionicons name="play" size={14} color="#fff" />
-        <AppText variant="label" style={{ color: '#fff', fontFamily: fonts.semibold }}>
+        <AppText
+          variant="label"
+          style={{ color: "#fff", fontFamily: fonts.semibold }}
+        >
           Play
         </AppText>
-      </Pressable>
+      </TouchableOpacity>
 
-      <Pressable
+      <TouchableOpacity
+        activeOpacity={0.8}
         accessibilityRole="button"
         accessibilityLabel="Download video"
         disabled={!ready || downloading}
         onPress={() => streamUrl && void start(streamUrl, filename)}
-        style={({ pressed }) => ({
-          flexDirection: 'row',
-          alignItems: 'center',
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
           gap: 6,
           height: 36,
           paddingHorizontal: 14,
@@ -60,8 +75,8 @@ export function MediaActions({ streamUrl, filename, onPlay, pendingLabel }: Medi
           backgroundColor: colors.cardAlt,
           borderWidth: 1,
           borderColor: colors.borderStrong,
-          opacity: pressed ? 0.85 : ready ? 1 : 0.6,
-        })}
+          opacity: ready ? 1 : 0.6,
+        }}
       >
         {downloading ? (
           <>
@@ -78,7 +93,7 @@ export function MediaActions({ streamUrl, filename, onPlay, pendingLabel }: Medi
             </AppText>
           </>
         )}
-      </Pressable>
+      </TouchableOpacity>
 
       {!ready && pendingLabel ? (
         <AppText variant="caption" style={{ marginLeft: 2 }}>

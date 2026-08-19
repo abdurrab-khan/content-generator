@@ -1,6 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Pressable } from 'react-native';
-import { colors, radii } from '../../theme';
+import { Ionicons } from "@expo/vector-icons";
+import { Pressable, TouchableOpacity } from "react-native";
+import { colors, radii } from "../../theme";
 
 /** Circular icon-only button. */
 
@@ -9,7 +9,7 @@ export interface IconButtonProps {
   onPress: () => void;
   size?: number;
   color?: string;
-  variant?: 'ghost' | 'surface';
+  variant?: "ghost" | "surface";
   disabled?: boolean;
   accessibilityLabel?: string;
 }
@@ -19,31 +19,30 @@ export function IconButton({
   onPress,
   size = 22,
   color = colors.text,
-  variant = 'ghost',
+  variant = "ghost",
   disabled = false,
   accessibilityLabel,
 }: IconButtonProps) {
   return (
-    <Pressable
+    <TouchableOpacity
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       disabled={disabled}
       onPress={onPress}
       hitSlop={8}
-      style={({ pressed }) => ({
+      style={{
         width: 40,
         height: 40,
         borderRadius: radii.full,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor:
-          variant === 'surface' ? colors.cardAlt : pressed ? 'rgba(255,255,255,0.08)' : 'transparent',
-        borderWidth: variant === 'surface' ? 1 : 0,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: variant === "surface" ? colors.cardAlt : "transparent",
+        borderWidth: variant === "surface" ? 1 : 0,
         borderColor: colors.border,
         opacity: disabled ? 0.4 : 1,
-      })}
+      }}
     >
       <Ionicons name={icon} size={size} color={color} />
-    </Pressable>
+    </TouchableOpacity>
   );
 }

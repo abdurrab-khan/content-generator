@@ -1,6 +1,6 @@
-import { Pressable, View } from 'react-native';
-import { colors, fonts, radii } from '../../theme';
-import { AppText } from './app-text';
+import { Pressable, View } from "react-native";
+import { colors, fonts, radii } from "../../theme";
+import { AppText } from "./app-text";
 
 /**
  * Segmented tab switch (requirement #4) — pill container, highlighted active
@@ -20,11 +20,16 @@ export interface SegmentedTabsProps<T extends string> {
   onChange: (key: T) => void;
 }
 
-export function SegmentedTabs<T extends string>({ tabs, active, onChange }: SegmentedTabsProps<T>) {
+export function SegmentedTabs<T extends string>({
+  tabs,
+  active,
+  onChange,
+}: SegmentedTabsProps<T>) {
   return (
     <View
       style={{
-        flexDirection: 'row',
+        overflow: "hidden",
+        flexDirection: "row",
         backgroundColor: colors.card,
         borderRadius: radii.full,
         borderWidth: 1,
@@ -45,19 +50,20 @@ export function SegmentedTabs<T extends string>({ tabs, active, onChange }: Segm
           >
             <View
               style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'row',
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "row",
                 gap: 6,
                 paddingVertical: 9,
                 borderRadius: radii.full,
-                backgroundColor: isActive ? colors.primary : 'transparent',
+                overflow: "hidden",
+                backgroundColor: isActive ? colors.primary : "transparent",
               }}
             >
               <AppText
                 variant="label"
                 style={{
-                  color: isActive ? '#fff' : colors.textMuted,
+                  color: isActive ? "#fff" : colors.textMuted,
                   fontFamily: isActive ? fonts.semibold : fonts.medium,
                 }}
               >
@@ -66,7 +72,9 @@ export function SegmentedTabs<T extends string>({ tabs, active, onChange }: Segm
               {tab.count !== undefined ? (
                 <View
                   style={{
-                    backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : colors.cardAlt,
+                    backgroundColor: isActive
+                      ? "rgba(255,255,255,0.25)"
+                      : colors.cardAlt,
                     borderRadius: radii.full,
                     paddingHorizontal: 7,
                     paddingVertical: 1,
@@ -74,7 +82,10 @@ export function SegmentedTabs<T extends string>({ tabs, active, onChange }: Segm
                 >
                   <AppText
                     variant="caption"
-                    style={{ color: isActive ? '#fff' : colors.textDim, fontSize: 11 }}
+                    style={{
+                      color: isActive ? "#fff" : colors.textDim,
+                      fontSize: 11,
+                    }}
                   >
                     {tab.count}
                   </AppText>

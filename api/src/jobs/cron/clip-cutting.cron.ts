@@ -15,7 +15,8 @@ const BATCH_SIZE = 25;
 /**
  * The sweep from the architecture diagram: periodically picks clips whose
  * video has been downloaded and pushes them into the FFmpeg cutting queue.
- * Cutting never waits on analysis and vice versa — this cron is the join.
+ * Cutting starts only once analysis (and its fan-in dedupe) has completed —
+ * sweeping mid-analysis would cut duplicates before the merge could see them.
  */
 @Injectable()
 export class ClipCuttingCron {
@@ -53,12 +54,12 @@ export class ClipCuttingCron {
       }
 
       const projectIds = [...new Set(cuttable.map((clip) => clip.projectId))];
+      // Cuttable clips are already gated on CLIPS_READY/CUTTING (see
+      // findCuttableClips), so only CLIPS_READY projects need the transition.
       await this.prisma.project.updateMany({
         where: {
           id: { in: projectIds },
-          pipelineState: {
-            in: [PipelineState.CLIPS_READY, PipelineState.VIDEO_READY],
-          },
+          pipelineState: PipelineState.CLIPS_READY,
         },
         data: { pipelineState: PipelineState.CUTTING },
       });
