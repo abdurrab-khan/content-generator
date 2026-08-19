@@ -53,6 +53,13 @@ pnpm start:dev
 
 API: http://localhost:3000/api · Swagger: http://localhost:3000/api/docs
 
+## Apps in this repo
+
+- `api/` — NestJS backend (pipeline, auth, storage)
+- `mobile/` — **ClipForge**, the Expo/React Native Android app (see `mobile/README.md`):
+  sign-in/up (better-auth), application switching, project pipeline tracking,
+  clips/ready/source tabs, video player, gallery downloads, tap-to-copy metadata.
+
 ## Usage
 
 ```bash

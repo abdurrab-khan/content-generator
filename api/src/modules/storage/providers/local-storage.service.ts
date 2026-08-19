@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, rmdir, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Readable } from 'node:stream';
 import { Injectable, OnModuleInit } from '@nestjs/common';
@@ -61,6 +61,18 @@ export class LocalStorageService implements IStorageService, OnModuleInit {
 
   async remove(absolutePath: string): Promise<void> {
     await unlink(absolutePath).catch(() => undefined);
+  }
+
+  /** Removes a directory only when empty (shared dirs fail harmlessly). */
+  async removeDirIfEmpty(absolutePath: string): Promise<void> {
+    if (absolutePath === this.root) return;
+    await rmdir(absolutePath).catch(() => undefined);
+  }
+
+  /** Recursively removes a directory tree. Never touches the root itself. */
+  async removeDirRecursive(absolutePath: string): Promise<void> {
+    if (absolutePath === this.root) return;
+    await rm(absolutePath, { recursive: true, force: true }).catch(() => undefined);
   }
 
   relative(absolutePath: string): string {

@@ -1,6 +1,9 @@
 import {
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Res,
@@ -48,5 +51,20 @@ export class VideosController {
       'Content-Disposition': `inline; filename="${filename}"`,
     });
     return new StreamableFile(stream);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Permanently delete a video',
+    description:
+      'Removes the video row and its file. When the clip it was cut from ' +
+      'shares the same file (podcast flow), that clip is deleted too.',
+  })
+  async remove(
+    @Session() session: UserSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    await this.videos.removeForUser(session.user.id, id);
   }
 }

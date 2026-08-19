@@ -1,3 +1,4 @@
+import type { Readable } from 'node:stream';
 import {
   BadRequestException,
   Injectable,
@@ -11,6 +12,7 @@ import {
   type Clip,
   type Prisma,
 } from '../../generated/prisma/client.js';
+import { LocalStorageService } from '../storage/providers/local-storage.service.js';
 import { findDuplicateClipIds } from './clip-merge.utils.js';
 import type { UpdateClipDto } from './dto/update-clip.dto.js';
 
@@ -23,6 +25,12 @@ export interface AgentClipCandidate {
   reason: string;
 }
 
+export interface ClipStream {
+  stream: Readable;
+  sizeBytes: number;
+  filename: string;
+}
+
 const MIN_CLIP_SECONDS = 10;
 const MAX_CLIP_SECONDS = 300;
 
@@ -30,7 +38,10 @@ const MAX_CLIP_SECONDS = 300;
 export class ClipsService {
   private readonly logger = new Logger(ClipsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: LocalStorageService,
+  ) {}
 
   // ------------------------------------------------------------------ agent
 
@@ -162,6 +173,25 @@ export class ClipsService {
   async removeForUser(userId: string, clipId: string): Promise<void> {
     const clip = await this.findOneForUser(userId, clipId);
     await this.prisma.clip.delete({ where: { id: clip.id } });
+  }
+
+  /** Stream the cut clip file (available once state is READY). */
+  async getStreamForUser(userId: string, clipId: string): Promise<ClipStream> {
+    const clip = await this.findOneForUser(userId, clipId);
+    if (!clip.clipPath) {
+      throw new NotFoundException('Clip file is not available yet');
+    }
+    const absolute = this.storage.resolve(clip.clipPath);
+    if (!(await this.storage.exists(absolute))) {
+      throw new NotFoundException('Clip file is missing from storage');
+    }
+    const info = (clip.clipInfo ?? {}) as Record<string, unknown>;
+    const title = typeof info.title === 'string' ? info.title : null;
+    return {
+      stream: this.storage.createReadStream(absolute),
+      sizeBytes: await this.storage.sizeBytes(absolute),
+      filename: `${title?.replace(/[^\w\- ]/g, '').trim() || clip.id}.mp4`,
+    };
   }
 
   // ------------------------------------------------------------------ jobs
