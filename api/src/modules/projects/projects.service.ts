@@ -118,7 +118,19 @@ export class ProjectsService {
     const project = await this.prisma.project.findFirst({
       where: { id: projectId, application: { userId } },
       include: {
-        clips: { orderBy: { start: 'asc' } },
+        clips: {
+          orderBy: { start: 'asc' },
+          include: {
+            // Variants ride along so the Ready tab can group graded versions
+            // under each video without extra requests.
+            renders: {
+              orderBy: { createdAt: 'asc' },
+              include: {
+                colorGradingPreset: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
         videos: { orderBy: { createdAt: 'desc' } },
         rawVideos: true,
       },

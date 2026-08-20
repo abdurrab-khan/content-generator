@@ -18,3 +18,7 @@ export interface AnalyzeProjectJobData {
 export interface CutClipJobData {
   clipId: string;
 }
+
+export interface ColorGradingJobData {
+  renderId: string;
+}

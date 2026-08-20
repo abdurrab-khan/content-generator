@@ -21,7 +21,11 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "db:cleanup-dupes": "tsx scripts/cleanup-duplicate-clips.ts"
+    "db:seed-presets": "tsx scripts/seed-color-grading-presets.ts",
+    "db:retry-download": "tsx scripts/retry-video-download.ts",
+    "db:rerender": "tsx scripts/rerender.ts",
+    "db:cleanup-dupes": "tsx scripts/cleanup-duplicate-clips.ts",
+    "tools:update-ytdlp": "tsx scripts/update-ytdlp.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.2.5",

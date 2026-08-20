@@ -1,4 +1,4 @@
-import type { ClipState, DownloadState, PipelineState } from '../api/types';
+import type { ClipState, DownloadState, PipelineState, RenderState } from '../api/types';
 import { colors } from '../theme';
 
 /**
@@ -58,6 +58,17 @@ export const clipStateMeta: Record<ClipState, { label: string; color: string }> 
   READY: { label: 'Ready', color: colors.success },
   FAILED: { label: 'Failed', color: colors.danger },
 };
+
+export const renderStateMeta: Record<RenderState, { label: string; color: string }> = {
+  PENDING: { label: 'Queued', color: colors.info },
+  PROCESSING: { label: 'Grading', color: colors.warning },
+  READY: { label: 'Ready', color: colors.success },
+  FAILED: { label: 'Failed', color: colors.danger },
+};
+
+export function isRenderInFlight(state: RenderState): boolean {
+  return state === 'PENDING' || state === 'PROCESSING';
+}
 
 export const downloadStateMeta: Record<DownloadState, { label: string; color: string }> = {
   DOWNLOADING: { label: 'Downloading', color: colors.info },

@@ -3,6 +3,7 @@ import { useEvent } from 'expo';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { clipStreamUrl } from '../../api/endpoints/clips';
+import { renderStreamUrl } from '../../api/endpoints/color-grading';
 import { rawVideoStreamUrl } from '../../api/endpoints/raw-videos';
 import { videoStreamUrl } from '../../api/endpoints/videos';
 import { getAuthToken } from '../../api/http';
@@ -17,18 +18,22 @@ import { IconButton } from '../ui/icon-button';
  * clips and raw source videos via the `kind` param.
  */
 
-export type MediaKind = 'video' | 'clip' | 'raw';
+export type MediaKind = 'video' | 'clip' | 'raw' | 'render';
 
 function streamUrlFor(kind: MediaKind, id: string): string {
   if (kind === 'clip') return clipStreamUrl(id);
   if (kind === 'raw') return rawVideoStreamUrl(id);
+  if (kind === 'render') return renderStreamUrl(id);
   return videoStreamUrl(id);
 }
 
 export function VideoPlayerScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string; kind?: MediaKind; title?: string }>();
-  const kind: MediaKind = params.kind === 'clip' || params.kind === 'raw' ? params.kind : 'video';
+  const kind: MediaKind =
+    params.kind === 'clip' || params.kind === 'raw' || params.kind === 'render'
+      ? params.kind
+      : 'video';
   const id = params.id ?? '';
   const title = params.title ?? 'Player';
   const url = streamUrlFor(kind, id);

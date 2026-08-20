@@ -12,6 +12,7 @@ import { JobsModule } from './jobs/jobs.module.js';
 import { AgentModule } from './modules/agent/agent.module.js';
 import { ApplicationsModule } from './modules/applications/applications.module.js';
 import { ClipsModule } from './modules/clips/clips.module.js';
+import { ColorGradingModule } from './modules/color-grading/color-grading.module.js';
 import { MediaModule } from './modules/media/media.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { RawVideosModule } from './modules/raw-videos/raw-videos.module.js';
@@ -47,6 +48,7 @@ import { VideosModule } from './modules/videos/videos.module.js';
     ApplicationsModule,
     ProjectsModule,
     ClipsModule,
+    ColorGradingModule,
     VideosModule,
     RawVideosModule,
     SourcesModule,

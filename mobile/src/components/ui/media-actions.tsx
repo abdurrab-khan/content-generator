@@ -21,6 +21,12 @@ export interface MediaActionsProps {
   onPlay: () => void;
   /** Why actions are disabled, e.g. "Cutting…" / "Downloading…". */
   pendingLabel?: string;
+  /**
+   * Overrides the Save button behavior (e.g. open a version chooser when a
+   * video has graded variants). When set, this component does not download
+   * itself — the caller owns the download flow.
+   */
+  onSave?: () => void;
 }
 
 export function MediaActions({
@@ -28,6 +34,7 @@ export function MediaActions({
   filename,
   onPlay,
   pendingLabel,
+  onSave,
 }: MediaActionsProps) {
   const { progress, downloading, start } = useMediaDownload();
   const ready = streamUrl !== null;
@@ -63,8 +70,10 @@ export function MediaActions({
         activeOpacity={0.8}
         accessibilityRole="button"
         accessibilityLabel="Download video"
-        disabled={!ready || downloading}
-        onPress={() => streamUrl && void start(streamUrl, filename)}
+        disabled={!ready || (!onSave && downloading)}
+        onPress={() =>
+          onSave ? onSave() : streamUrl && void start(streamUrl, filename)
+        }
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -78,7 +87,7 @@ export function MediaActions({
           opacity: ready ? 1 : 0.6,
         }}
       >
-        {downloading ? (
+        {!onSave && downloading ? (
           <>
             <ActivityIndicator size="small" color={colors.primaryBright} />
             <AppText variant="label" style={{ color: colors.primaryBright }}>

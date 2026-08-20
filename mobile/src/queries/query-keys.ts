@@ -8,4 +8,6 @@ export const queryKeys = {
   project: (id: string) => ['projects', 'detail', id] as const,
   clips: (projectId: string) => ['clips', projectId] as const,
   rawVideos: (projectId: string) => ['raw-videos', projectId] as const,
+  colorGradingPresets: ['color-grading-presets'] as const,
+  clipRenders: (clipId: string) => ['clip-renders', clipId] as const,
 };

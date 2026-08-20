@@ -17,6 +17,17 @@ export interface CutClipOptions {
   precise?: boolean;
 }
 
+export interface ApplyFilterGraphOptions {
+  inputPath: string;
+  outputPath: string;
+  /**
+   * Raw FFmpeg video filter chain (-vf), e.g.
+   * "curves=all='0/0 0.25/0.20 1/1',eq=contrast=1.18:saturation=1.18".
+   * Passed as a single execa arg — no shell, commas/quotes are safe.
+   */
+  filterGraph: string;
+}
+
 /** Thin execa-based FFmpeg wrapper (fluent-ffmpeg is deprecated). */
 @Injectable()
 export class FfmpegService {
@@ -110,6 +121,48 @@ export class FfmpegService {
       );
     } catch (error) {
       throw new Error(`ffmpeg cut failed: ${execFailureMessage(error)}`);
+    }
+  }
+
+  /**
+   * Re-encodes a video through a raw filter chain (color grading, and later
+   * any video effect). Audio is copied through untouched.
+   */
+  async applyFilterGraph(options: ApplyFilterGraphOptions): Promise<void> {
+    const { inputPath, outputPath, filterGraph } = options;
+    if (!filterGraph.trim()) {
+      throw new Error('Filter graph must not be empty');
+    }
+
+    const args = [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      inputPath,
+      '-vf',
+      filterGraph,
+      '-c:v',
+      'libx264',
+      '-preset',
+      'veryfast',
+      '-crf',
+      '18',
+      '-c:a',
+      'copy',
+      '-movflags',
+      '+faststart',
+      '-y',
+      outputPath,
+    ];
+
+    try {
+      await execa(this.ffmpegPath, args);
+      this.logger.log(`Applied filter graph -> ${outputPath}`);
+    } catch (error) {
+      throw new Error(
+        `ffmpeg filter graph failed: ${execFailureMessage(error)}`,
+      );
     }
   }
 }
