@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useMemo, useState } from "react";
+import { clipCaptionsUrl } from "../../api/endpoints/clips";
 import type { ClipRender, Video } from "../../api/types";
 import { formatDuration, formatRelativeDate } from "../../lib/format";
 import { buildVideoVersions, type VideoVersion } from "../../lib/video-versions";
@@ -158,6 +159,7 @@ export function VideoCard({
             filename={activeVersion.filename}
             onPlay={() => onPlay(activeVersion)}
             onSave={hasVersions ? () => setChooserVisible(true) : undefined}
+            captionsUrl={video.clipId ? clipCaptionsUrl(video.clipId) : null}
           />
           <View style={{ flex: 1 }} />
           <AppText variant="caption">

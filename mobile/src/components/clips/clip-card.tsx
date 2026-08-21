@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
-import { clipStreamUrl } from '../../api/endpoints/clips';
+import { clipCaptionsUrl, clipStreamUrl } from '../../api/endpoints/clips';
 import type { Clip, ClipRender } from '../../api/types';
 import { formatDuration, formatRange } from '../../lib/format';
 import { clipStateMeta, renderStateMeta } from '../../lib/status';
@@ -78,6 +78,7 @@ export function ClipCard({ clip, onPlay, onPlayRender }: ClipCardProps) {
             onSave={
               versions.length > 1 ? () => setChooserVisible(true) : undefined
             }
+            captionsUrl={clipCaptionsUrl(clip.id)}
           />
           <View style={{ flex: 1 }} />
           <TouchableOpacity
