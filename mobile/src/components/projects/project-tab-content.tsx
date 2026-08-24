@@ -86,7 +86,9 @@ export function ProjectTabContent({
             }
             onPlay={(version) =>
               onPlay(
-                version.isOriginal ? video.id : (version.render?.id ?? video.id),
+                version.isOriginal
+                  ? video.id
+                  : (version.render?.id ?? video.id),
                 version.isOriginal ? "video" : "render",
                 version.isOriginal
                   ? (video.title ?? "Video")

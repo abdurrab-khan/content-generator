@@ -1,21 +1,24 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
-import { clipCaptionsUrl, clipStreamUrl } from '../../api/endpoints/clips';
-import type { Clip, ClipRender } from '../../api/types';
-import { formatDuration, formatRange } from '../../lib/format';
-import { clipStateMeta, renderStateMeta } from '../../lib/status';
-import { buildClipVersions } from '../../lib/video-versions';
-import { useClipRenders, useDeleteClipRender } from '../../queries/use-color-grading';
-import { colors, fonts, radii } from '../../theme';
-import { AppText } from '../ui/app-text';
-import { Badge } from '../ui/badge';
-import { Card } from '../ui/card';
-import { CopyableText } from '../ui/copyable-text';
-import { MediaActions } from '../ui/media-actions';
-import { ViralityBadge } from '../ui/virality-badge';
-import { VersionDownloadSheet } from '../videos/version-download-sheet';
-import { ColorGradingSheet } from './color-grading-sheet';
+import { Ionicons } from "@expo/vector-icons";
+import { useMemo, useState } from "react";
+import { ScrollView, TouchableOpacity, View } from "react-native";
+import { clipCaptionsUrl, clipStreamUrl } from "../../api/endpoints/clips";
+import type { Clip, ClipRender } from "../../api/types";
+import { formatDuration, formatRange } from "../../lib/format";
+import { clipStateMeta, renderStateMeta } from "../../lib/status";
+import { buildClipVersions } from "../../lib/video-versions";
+import {
+  useClipRenders,
+  useDeleteClipRender,
+} from "../../queries/use-color-grading";
+import { colors, fonts, radii } from "../../theme";
+import { AppText } from "../ui/app-text";
+import { Badge } from "../ui/badge";
+import { Card } from "../ui/card";
+import { CopyableText } from "../ui/copyable-text";
+import { MediaActions } from "../ui/media-actions";
+import { ViralityBadge } from "../ui/virality-badge";
+import { VersionDownloadSheet } from "../videos/version-download-sheet";
+import { ColorGradingSheet } from "./color-grading-sheet";
 
 /**
  * Raw clip card — the AI-identified moment: virality score, hook, reason,
@@ -32,10 +35,11 @@ export interface ClipCardProps {
 
 export function ClipCard({ clip, onPlay, onPlayRender }: ClipCardProps) {
   const info = clip.clipInfo ?? {};
-  const ready = clip.state === 'READY' && clip.clipPath !== null;
+  const ready = clip.state === "READY" && clip.clipPath !== null;
   const stateMeta = clipStateMeta[clip.state];
-  const title = info.title ?? 'Untitled clip';
-  const score = typeof info.viralityScore === 'number' ? info.viralityScore : null;
+  const title = info.title ?? "Untitled clip";
+  const score =
+    typeof info.viralityScore === "number" ? info.viralityScore : null;
 
   const [sheetVisible, setSheetVisible] = useState(false);
   const [chooserVisible, setChooserVisible] = useState(false);
@@ -48,19 +52,30 @@ export function ClipCard({ clip, onPlay, onPlayRender }: ClipCardProps) {
   return (
     <Card style={{ gap: 0 }}>
       <View style={{ gap: 10 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           {score !== null ? <ViralityBadge score={score} /> : null}
           <Badge label={stateMeta.label} color={stateMeta.color} />
           <View style={{ flex: 1 }} />
           <AppText variant="caption" style={{ color: colors.textDim }}>
-            {formatRange(clip.start, clip.end)} · {formatDuration(clip.end - clip.start)}
+            {formatRange(clip.start, clip.end)} ·{" "}
+            {formatDuration(clip.end - clip.start)}
           </AppText>
         </View>
 
-        <CopyableText value={title} copyLabel="Title copied" variant="subheading" numberOfLines={2} />
+        <CopyableText
+          value={title}
+          copyLabel="Title copied"
+          variant="subheading"
+          numberOfLines={2}
+        />
 
         {info.hook ? (
-          <CopyableText value={info.hook} copyLabel="Hook copied" variant="muted" numberOfLines={3} />
+          <CopyableText
+            value={info.hook}
+            copyLabel="Hook copied"
+            variant="muted"
+            numberOfLines={3}
+          />
         ) : null}
 
         {info.reason ? (
@@ -69,7 +84,11 @@ export function ClipCard({ clip, onPlay, onPlayRender }: ClipCardProps) {
           </AppText>
         ) : null}
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 6 }}
+        >
           <MediaActions
             streamUrl={ready ? clipStreamUrl(clip.id) : null}
             filename={title}
@@ -88,8 +107,8 @@ export function ClipCard({ clip, onPlay, onPlayRender }: ClipCardProps) {
             disabled={!ready}
             onPress={() => setSheetVisible(true)}
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
+              flexDirection: "row",
+              alignItems: "center",
               gap: 6,
               height: 36,
               paddingHorizontal: 14,
@@ -100,19 +119,19 @@ export function ClipCard({ clip, onPlay, onPlayRender }: ClipCardProps) {
               opacity: ready ? 1 : 0.6,
             }}
           >
-            <Ionicons name="color-palette-outline" size={15} color={colors.text} />
+            <Ionicons
+              name="color-palette-outline"
+              size={15}
+              color={colors.text}
+            />
             <AppText variant="label" style={{ color: colors.text }}>
               Grade
             </AppText>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
 
         {(renders.data?.length ?? 0) > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8 }}
-          >
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             {renders.data?.map((render) => (
               <RenderChip
                 key={render.id}
@@ -121,7 +140,7 @@ export function ClipCard({ clip, onPlay, onPlayRender }: ClipCardProps) {
                 onPlay={() => onPlayRender(render)}
               />
             ))}
-          </ScrollView>
+          </View>
         ) : null}
       </View>
 
@@ -153,14 +172,14 @@ function RenderChip({
 }) {
   const deleteRender = useDeleteClipRender(clipId);
   const stateMeta = renderStateMeta[render.state];
-  const playable = render.state === 'READY';
-  const label = render.colorGradingPreset?.name ?? 'Variant';
+  const playable = render.state === "READY";
+  const label = render.colorGradingPreset?.name ?? "Variant";
 
   return (
     <View
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         gap: 6,
         height: 34,
         paddingLeft: 12,
@@ -177,7 +196,7 @@ function RenderChip({
         accessibilityLabel={`Play variant ${label}`}
         disabled={!playable}
         onPress={onPlay}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+        style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
       >
         {playable ? (
           <Ionicons name="play" size={12} color={stateMeta.color} />
@@ -187,10 +206,10 @@ function RenderChip({
           style={{ color: stateMeta.color, fontFamily: fonts.semibold }}
         >
           {label}
-          {playable ? '' : ` · ${stateMeta.label}`}
+          {playable ? "" : ` · ${stateMeta.label}`}
         </AppText>
       </TouchableOpacity>
-      {render.state === 'READY' || render.state === 'FAILED' ? (
+      {render.state === "READY" || render.state === "FAILED" ? (
         <TouchableOpacity
           activeOpacity={0.7}
           accessibilityRole="button"
@@ -205,4 +224,3 @@ function RenderChip({
     </View>
   );
 }
-

@@ -1,6 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, TouchableOpacity, View } from 'react-native';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { presetPreviewUrl } from '../../api/endpoints/color-grading';
+import { getAuthToken } from '../../api/http';
 import type { ClipRender, ColorGradingPreset } from '../../api/types';
 import { renderStateMeta } from '../../lib/status';
 import { useColorGradingPresets, useCreateClipRender } from '../../queries/use-color-grading';
@@ -74,6 +77,12 @@ export function ColorGradingSheet({
         fullWidth
         style={{ marginTop: 16 }}
       />
+      <AppText
+        variant="caption"
+        style={{ textAlign: 'center', marginTop: 8, color: colors.textDim }}
+      >
+        Previews show each look on the same clip
+      </AppText>
     </Sheet>
   );
 }
@@ -100,7 +109,7 @@ function PresetRow({ preset, selected, existing, onPress }: PresetRowProps) {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        padding: 14,
+        padding: 10,
         borderRadius: radii.lg,
         borderWidth: 1,
         borderColor: selected ? colors.primaryBright : colors.borderStrong,
@@ -108,26 +117,89 @@ function PresetRow({ preset, selected, existing, onPress }: PresetRowProps) {
         opacity: taken ? 0.55 : 1,
       }}
     >
-      <Ionicons
-        name={selected ? 'radio-button-on' : 'radio-button-off'}
-        size={20}
-        color={selected ? colors.primaryBright : colors.textDim}
-      />
-      <View style={{ flex: 1, gap: 2 }}>
-        <AppText variant="label" style={{ fontFamily: fonts.semibold }}>
-          {preset.name}
-        </AppText>
+      <PresetPreview preset={preset} />
+      <View style={{ flex: 1, gap: 3 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <AppText variant="label" style={{ fontFamily: fonts.semibold }}>
+            {preset.name}
+          </AppText>
+          {taken && stateMeta ? (
+            <AppText variant="caption" style={{ color: stateMeta.color }}>
+              {stateMeta.label}
+            </AppText>
+          ) : null}
+        </View>
+        {preset.bestFor ? (
+          <AppText
+            variant="caption"
+            style={{ color: colors.primaryBright }}
+            numberOfLines={1}
+          >
+            {preset.bestFor}
+          </AppText>
+        ) : null}
         {preset.description ? (
           <AppText variant="caption" numberOfLines={2}>
             {preset.description}
           </AppText>
         ) : null}
       </View>
-      {taken && stateMeta ? (
-        <AppText variant="caption" style={{ color: stateMeta.color }}>
-          {stateMeta.label}
-        </AppText>
-      ) : null}
+      <Ionicons
+        name={selected ? 'radio-button-on' : 'radio-button-off'}
+        size={20}
+        color={selected ? colors.primaryBright : colors.textDim}
+      />
     </TouchableOpacity>
+  );
+}
+
+/**
+ * Muted auto-playing preview loop for one preset. Only mounted while the
+ * sheet is open (sheets unmount on close), so no battery drain in lists.
+ * Falls back to a static tile when the preview hasn't been generated yet.
+ */
+function PresetPreview({ preset }: { preset: ColorGradingPreset }) {
+  const token = getAuthToken();
+  const hasPreview = preset.previewPath !== null;
+  const player = useVideoPlayer(
+    hasPreview
+      ? {
+          uri: presetPreviewUrl(preset.id),
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      : null,
+    (instance) => {
+      instance.loop = true;
+      instance.muted = true;
+      instance.play();
+    },
+  );
+
+  return (
+    <View
+      style={{
+        width: 96,
+        height: 54,
+        borderRadius: radii.md,
+        overflow: 'hidden',
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.borderStrong,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {hasPreview ? (
+        <VideoView
+          player={player}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          nativeControls={false}
+          pointerEvents="none"
+        />
+      ) : (
+        <Ionicons name="color-palette-outline" size={20} color={colors.textDim} />
+      )}
+    </View>
   );
 }

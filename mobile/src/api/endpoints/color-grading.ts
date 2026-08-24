@@ -41,3 +41,8 @@ export async function deleteClipRender(renderId: string): Promise<void> {
 export function renderStreamUrl(renderId: string): string {
   return `${API_URL}/renders/${renderId}/stream`;
 }
+
+/** Authenticated preview loop URL for a preset (muted 2s graded clip). */
+export function presetPreviewUrl(presetId: string): string {
+  return `${API_URL}/color-grading/presets/${presetId}/preview`;
+}

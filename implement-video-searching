@@ -1,0 +1,6 @@
+Hey, Build a feature to find tranding or old popular podcasts from the youtube along with the details like (title, thumbnail, link, like, views), and you need to consider following things as well.
+	1. Add new field on application that tells about the language.
+	2. So based on language find the podcaster that do podcast on the language like if english than find podcasters like (joe rogan, diary of ceo and many other podcasters), but if it's hindi than (raj shamani, nikhil kamat, prakhar and many other podcasters).
+	3. Build caching system so that i won't find same video again, there will be two kind of cache for to doing video again,
+		1. If Already make clip from the video either manually or from this feature gives.
+		2. Not Intrested if i make the given video as not intreseted don't find the same video again.

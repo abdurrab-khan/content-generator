@@ -127,6 +127,10 @@ export interface ColorGradingPreset {
   id: string;
   name: string;
   description: string | null;
+  /** Short "works great on..." guidance for users new to grading. */
+  bestFor: string | null;
+  /** Set once the preview loop has been generated (null → no preview yet). */
+  previewPath: string | null;
   /** Raw FFmpeg -vf filter chain (not shown in the UI). */
   filterGraph: string;
   isBuiltIn: boolean;

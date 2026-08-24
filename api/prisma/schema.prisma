@@ -207,6 +207,10 @@ model ColorGradingPreset {
   description String?
   /// Raw FFmpeg -vf filter chain applied when rendering a variant
   filterGraph String       @map("filter_graph")
+  /// Short "works great on..." guidance for users new to grading
+  bestFor     String?      @map("best_for")
+  /// Storage-relative path of the short graded preview loop (null until generated)
+  previewPath String?      @map("preview_path")
   isBuiltIn   Boolean      @default(true) @map("is_built_in")
   status      RecordStatus @default(ACTIVE)
   renders     ClipRender[]

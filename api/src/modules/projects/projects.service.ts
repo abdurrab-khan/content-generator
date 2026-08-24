@@ -172,7 +172,10 @@ export class ProjectsService {
    * cascades to clips, raw videos and videos — then best-effort deletes the
    * files from storage (source video, transcript, cut clips, final videos).
    */
-  async permanentlyDeleteForUser(userId: string, projectId: string): Promise<void> {
+  async permanentlyDeleteForUser(
+    userId: string,
+    projectId: string,
+  ): Promise<void> {
     const project = await this.prisma.project.findFirst({
       where: { id: projectId, application: { userId } },
       include: { clips: true, videos: true, rawVideos: true },
@@ -217,7 +220,9 @@ export class ProjectsService {
         this.storage.resolve(StorageFolder.TRANSCRIPTS, projectId),
       );
     } catch (error) {
-      this.logger.warn(`Failed to remove transcript dir for ${projectId}: ${error}`);
+      this.logger.warn(
+        `Failed to remove transcript dir for ${projectId}: ${error}`,
+      );
     }
 
     this.logger.log(
