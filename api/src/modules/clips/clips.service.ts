@@ -5,6 +5,8 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { buildClipSrt } from '../../common/utils/srt-builder.js';
+import { parseVtt } from '../../common/utils/vtt-parser.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import {
   ClipState,
@@ -29,6 +31,11 @@ export interface AgentClipCandidate {
 export interface ClipStream {
   stream: Readable;
   sizeBytes: number;
+  filename: string;
+}
+
+export interface ClipCaptions {
+  content: string;
   filename: string;
 }
 
@@ -207,6 +214,43 @@ export class ClipsService {
       stream: this.storage.createReadStream(absolute),
       sizeBytes: await this.storage.sizeBytes(absolute),
       filename: `${title?.replace(/[^\w\- ]/g, '').trim() || clip.id}.mp4`,
+    };
+  }
+
+  /**
+   * Clip captions as a SubRip (.srt) document, generated on demand from the
+   * project's stored transcript (no extra storage needed). Timings are
+   * shifted to be relative to the clip start.
+   */
+  async getCaptionsForUser(
+    userId: string,
+    clipId: string,
+  ): Promise<ClipCaptions> {
+    const clip = await this.prisma.clip.findFirst({
+      where: {
+        id: clipId,
+        project: { application: { userId } },
+      },
+      include: { project: { select: { transcriptPath: true } } },
+    });
+    if (!clip) throw new NotFoundException('Clip not found');
+    if (!clip.project.transcriptPath) {
+      throw new NotFoundException('Transcript is not available yet');
+    }
+    const absolute = this.storage.resolve(clip.project.transcriptPath);
+    if (!(await this.storage.exists(absolute))) {
+      throw new NotFoundException('Transcript file is missing from storage');
+    }
+    const cues = parseVtt(await this.storage.readText(absolute));
+    const content = buildClipSrt(cues, clip.start, clip.end);
+    if (!content) {
+      throw new NotFoundException('No captions overlap this clip');
+    }
+    const info = (clip.clipInfo ?? {}) as Record<string, unknown>;
+    const title = typeof info.title === 'string' ? info.title : null;
+    return {
+      content,
+      filename: `${title?.replace(/[^\w\- ]/g, '').trim() || clip.id}.srt`,
     };
   }
 

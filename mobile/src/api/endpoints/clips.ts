@@ -26,3 +26,8 @@ export async function deleteClip(id: string): Promise<void> {
 export function clipStreamUrl(id: string): string {
   return `${API_URL}/clips/${id}/stream`;
 }
+
+/** Authenticated .srt captions URL (attach `Authorization: Bearer <token>`). */
+export function clipCaptionsUrl(id: string): string {
+  return `${API_URL}/clips/${id}/captions`;
+}

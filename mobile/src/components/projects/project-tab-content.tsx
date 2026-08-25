@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import type { ProjectDetail, Video } from "../../api/types";
+import type { ClipRender, ProjectDetail, Video } from "../../api/types";
 import type { MediaKind } from "../player/video-player-screen";
 import { ClipCard } from "../clips/clip-card";
 import { RawVideoCard } from "../raw-videos/raw-video-card";
@@ -30,11 +30,14 @@ export function ProjectTabContent({
   );
 
   // Videos carry no score themselves — it lives on the producing clip
-  // (clipInfo.viralityScore), linked via video.clipId.
+  // (clipInfo.viralityScore), linked via video.clipId. The same link joins
+  // graded variants (clip.renders) to the video they belong to.
   const scoreByClipId = new Map<string, number>();
+  const rendersByClipId = new Map<string, ClipRender[]>();
   for (const clip of project.clips) {
     const score = clip.clipInfo?.viralityScore;
     if (typeof score === "number") scoreByClipId.set(clip.id, score);
+    rendersByClipId.set(clip.id, clip.renders);
   }
 
   if (tab === "clips") {
@@ -51,6 +54,13 @@ export function ProjectTabContent({
             clip={clip}
             onPlay={() =>
               onPlay(clip.id, "clip", clip.clipInfo?.title ?? "Clip")
+            }
+            onPlayRender={(render) =>
+              onPlay(
+                render.id,
+                "render",
+                `${clip.clipInfo?.title ?? "Clip"} · ${render.colorGradingPreset?.name ?? "Variant"}`,
+              )
             }
           />
         ))}
@@ -71,7 +81,20 @@ export function ProjectTabContent({
             key={video.id}
             video={video}
             poster={project.thumbnail}
-            onPlay={() => onPlay(video.id, "video", video.title ?? "Video")}
+            renders={
+              video.clipId ? (rendersByClipId.get(video.clipId) ?? []) : []
+            }
+            onPlay={(version) =>
+              onPlay(
+                version.isOriginal
+                  ? video.id
+                  : (version.render?.id ?? video.id),
+                version.isOriginal ? "video" : "render",
+                version.isOriginal
+                  ? (video.title ?? "Video")
+                  : `${video.title ?? "Video"} · ${version.label}`,
+              )
+            }
             onDelete={() => onDeleteVideo(video)}
             viralityScore={
               video.clipId ? (scoreByClipId.get(video.clipId) ?? null) : null

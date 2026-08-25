@@ -54,6 +54,26 @@ export class ClipsController {
     await this.clips.removeForUser(session.user.id, id);
   }
 
+  @Get(':id/captions')
+  @ApiOperation({ summary: 'Download the clip captions as a .srt file' })
+  async captions(
+    @Session() session: UserSession,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<StreamableFile> {
+    const { content, filename } = await this.clips.getCaptionsForUser(
+      session.user.id,
+      id,
+    );
+    const buffer = Buffer.from(content, 'utf8');
+    response.set({
+      'Content-Type': 'application/x-subrip',
+      'Content-Length': buffer.byteLength,
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+    return new StreamableFile(buffer);
+  }
+
   @Get(':id/stream')
   @ApiOperation({ summary: 'Stream/download the cut clip file' })
   async stream(

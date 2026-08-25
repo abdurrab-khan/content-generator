@@ -116,6 +116,15 @@ enum ClipState {
   FAILED
 }
 
+/// Lifecycle of a clip render (a variant produced from a cut clip by
+/// applying effects — color grading today, background music tomorrow).
+enum RenderState {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
 enum DownloadState {
   DOWNLOADING
   DOWNLOADED
@@ -178,14 +187,65 @@ model Clip {
   state     ClipState @default(NOT_STARTED)
   /// { title, hook, viralityScore, reason, chunkIndex }
   clipInfo  Json?     @map("clip_info")
-  clipPath  String?   @map("clip_path")
-  projectId String    @map("project_id")
-  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  clipPath  String?     @map("clip_path")
+  projectId String      @map("project_id")
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  renders   ClipRender[]
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
 
   @@index([projectId])
   @@map("clips")
+}
+
+/// Shared color grading presets (built-in today; user-created later via
+/// `isBuiltIn = false`). `filterGraph` is a raw FFmpeg video filter chain,
+/// e.g. "curves=all='0/0 0.25/0.20 1/1',eq=contrast=1.18:saturation=1.18".
+model ColorGradingPreset {
+  id          String       @id @default(uuid()) @map("preset_id")
+  name        String       @unique
+  description String?
+  /// Raw FFmpeg -vf filter chain applied when rendering a variant
+  filterGraph String       @map("filter_graph")
+  /// Short "works great on..." guidance for users new to grading
+  bestFor     String?      @map("best_for")
+  /// Storage-relative path of the short graded preview loop (null until generated)
+  previewPath String?      @map("preview_path")
+  isBuiltIn   Boolean      @default(true) @map("is_built_in")
+  status      RecordStatus @default(ACTIVE)
+  renders     ClipRender[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("color_grading_presets")
+}
+
+/// One variant produced from a cut clip — the original clip file is never
+/// touched. A clip can have many renders (one per effect combination);
+/// today the combination is just a color grading preset, later it grows
+/// (background music, captions, ...) via new nullable FKs + `options`.
+model ClipRender {
+  id                   String              @id @default(uuid()) @map("render_id")
+  state                RenderState         @default(PENDING)
+  outputPath           String?             @map("output_path")
+  errorMessage         String?             @map("error_message")
+  /// Which effects were requested — all nullable, at least one required.
+  colorGradingPresetId String?             @map("color_grading_preset_id")
+  colorGradingPreset   ColorGradingPreset? @relation(fields: [colorGradingPresetId], references: [id], onDelete: Restrict)
+  /// Server-computed dedupe key per effect combination, e.g.
+  /// "preset:<uuid>" (later "preset:<uuid>+audio:<uuid>"). Nullable-safe,
+  /// unlike a multi-column unique over nullable FKs.
+  variantKey           String              @map("variant_key")
+  /// Per-effect parameters for future options (music volume, fade, ...)
+  options              Json?
+  clipId               String              @map("clip_id")
+  clip                 Clip                @relation(fields: [clipId], references: [id], onDelete: Cascade)
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  @@unique([clipId, variantKey])
+  @@index([clipId])
+  @@map("clip_renders")
 }
 
 /// Downloaded source material. In the podcast flow there is exactly one raw

@@ -42,10 +42,10 @@ export interface DownloadHandle {
   cancel: () => Promise<void>;
 }
 
-function sanitizeFilename(name: string): string {
+function sanitizeFilename(name: string, extension = 'mp4'): string {
   const cleaned = name.replace(/[^\w\- ]/g, '').trim().replace(/\s+/g, '-');
-  const base = cleaned.length > 0 ? cleaned.slice(0, 60) : `video-${Date.now()}`;
-  return base.toLowerCase().endsWith('.mp4') ? base : `${base}.mp4`;
+  const base = cleaned.length > 0 ? cleaned.slice(0, 60) : `file-${Date.now()}`;
+  return base.toLowerCase().endsWith(`.${extension}`) ? base : `${base}.${extension}`;
 }
 
 async function ensureGalleryPermission(): Promise<void> {
@@ -91,5 +91,33 @@ export function downloadVideoToGallery(request: DownloadRequest): DownloadHandle
       await FileSystem.deleteAsync(target, { idempotent: true }).catch(() => undefined);
     },
   };
+}
+
+/**
+ * Authenticated captions (.srt) download → system share/save sheet.
+ *
+ * MediaLibrary only accepts media (photo/video/audio), so a text subtitle
+ * file can't go to the gallery. Instead we download to the app cache and
+ * hand it to the OS share sheet ("Save to Files", Drive, a video editor,
+ * ...). expo-sharing ships inside Expo Go, so a static import is safe.
+ */
+export async function downloadCaptionsAndShare(
+  request: Omit<DownloadRequest, 'onProgress'>,
+): Promise<void> {
+  const Sharing = await import('expo-sharing');
+  const target = `${FileSystem.cacheDirectory}${sanitizeFilename(request.filename, 'srt')}`;
+  const result = await FileSystem.downloadAsync(request.url, target, {
+    headers: { Authorization: `Bearer ${request.token}` },
+  });
+  if (result.status !== 200) {
+    await FileSystem.deleteAsync(target, { idempotent: true }).catch(() => undefined);
+    throw new Error(`Download failed (${result.status})`);
+  }
+  if (await Sharing.isAvailableAsync()) {
+    await Sharing.shareAsync(result.uri, {
+      mimeType: 'application/x-subrip',
+      dialogTitle: 'Save captions (.srt)',
+    });
+  }
 }
 

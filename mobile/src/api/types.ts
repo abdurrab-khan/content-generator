@@ -21,6 +21,8 @@ export type PipelineState =
 
 export type ClipState = 'NOT_STARTED' | 'PENDING' | 'CUTTING' | 'READY' | 'FAILED';
 
+export type RenderState = 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED';
+
 export type DownloadState = 'DOWNLOADING' | 'DOWNLOADED' | 'FAILED';
 
 export type SourceType = 'YOUTUBE' | 'TWITCH' | 'UPLOAD';
@@ -120,9 +122,47 @@ export interface Video {
   updatedAt: string;
 }
 
+/** Shared catalog entry — a named FFmpeg filter chain. */
+export interface ColorGradingPreset {
+  id: string;
+  name: string;
+  description: string | null;
+  /** Short "works great on..." guidance for users new to grading. */
+  bestFor: string | null;
+  /** Set once the preview loop has been generated (null → no preview yet). */
+  previewPath: string | null;
+  /** Raw FFmpeg -vf filter chain (not shown in the UI). */
+  filterGraph: string;
+  isBuiltIn: boolean;
+  status: RecordStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * One rendered variant of a clip (original clip untouched). Effects beyond
+ * color grading (audio, ...) extend this shape later.
+ */
+export interface ClipRender {
+  id: string;
+  state: RenderState;
+  outputPath: string | null;
+  errorMessage: string | null;
+  colorGradingPresetId: string | null;
+  colorGradingPreset?: { id: string; name: string } | null;
+  clipId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Clip with its rendered variants (embedded in the project detail payload). */
+export interface ClipWithRenders extends Clip {
+  renders: ClipRender[];
+}
+
 /** GET /api/projects/:id — includes relations. */
 export interface ProjectDetail extends Project {
-  clips: Clip[];
+  clips: ClipWithRenders[];
   videos: Video[];
   rawVideos: RawVideo[];
 }
