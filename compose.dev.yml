@@ -8,11 +8,11 @@ services:
       POSTGRES_PASSWORD: content
       POSTGRES_DB: content_generator
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U content -d content_generator']
+      test: ["CMD-SHELL", "pg_isready -U content -d content_generator"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -25,7 +25,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - '5050:80'
+      - "5050:80"
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     depends_on:
@@ -37,11 +37,11 @@ services:
     container_name: content-generator-redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - "6379:6379"
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10

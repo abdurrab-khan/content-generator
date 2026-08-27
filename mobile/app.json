@@ -2,7 +2,7 @@
   "expo": {
     "name": "ClipForge",
     "slug": "clipforge",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "scheme": "clipforge",
     "icon": "./assets/icon.png",
@@ -44,6 +44,14 @@
           "photosPermission": "Allow ClipForge to access your gallery.",
           "savePhotosPermission": "Allow ClipForge to save videos to your gallery.",
           "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ]

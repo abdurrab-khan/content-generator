@@ -48,6 +48,7 @@ export interface RawResponse<T> {
 
 function buildUrl(path: string, query?: RequestOptions['query']): string {
   const base = `${API_URL}${path}`;
+  console.log("BASE URL IS: ", base)
   if (!query) return base;
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
@@ -86,6 +87,8 @@ async function rawRequest<T>(path: string, options: RequestOptions = {}): Promis
       headers,
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     });
+    console.log("API STATUS: ", response.status)
+    console.log("API OK: ", response.ok)
   } catch {
     throw new ApiError(
       0,

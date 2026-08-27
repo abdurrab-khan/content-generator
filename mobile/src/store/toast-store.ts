@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 /**
  * Global toast queue — framework-level store so non-React helpers
@@ -6,7 +6,7 @@ import { create } from 'zustand';
  * Rendered by <ToastHost /> mounted once in the root layout.
  */
 
-export type ToastKind = 'success' | 'error' | 'info';
+export type ToastKind = "success" | "error" | "info";
 
 export interface ToastItem {
   id: number;
@@ -25,7 +25,7 @@ let nextId = 1;
 
 export const useToastStore = create<ToastState>((set) => ({
   toasts: [],
-  show: (message, kind = 'success') => {
+  show: (message, kind = "success") => {
     const id = nextId++;
     set((state) => ({ toasts: [...state.toasts, { id, message, kind }] }));
     setTimeout(() => {
@@ -39,7 +39,8 @@ export const useToastStore = create<ToastState>((set) => ({
 
 /** Imperative helper for use outside components. */
 export const toast = {
-  success: (message: string) => useToastStore.getState().show(message, 'success'),
-  error: (message: string) => useToastStore.getState().show(message, 'error'),
-  info: (message: string) => useToastStore.getState().show(message, 'info'),
+  success: (message: string) =>
+    useToastStore.getState().show(message, "success"),
+  error: (message: string) => useToastStore.getState().show(message, "error"),
+  info: (message: string) => useToastStore.getState().show(message, "info"),
 };
