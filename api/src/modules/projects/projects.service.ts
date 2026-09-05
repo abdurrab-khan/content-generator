@@ -1,6 +1,8 @@
 import {
   BadGatewayException,
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -13,6 +15,10 @@ import {
 } from '../../generated/prisma/client.js';
 import { PipelineService } from '../../jobs/pipeline.service.js';
 import { ApplicationsService } from '../applications/applications.service.js';
+import {
+  DiscoveryService,
+  toUploadDate,
+} from '../discovery/discovery.service.js';
 import { SourceRegistryService } from '../sources/source-registry.service.js';
 import { StorageFolder } from '../storage/interfaces/storage.interface.js';
 import { LocalStorageService } from '../storage/providers/local-storage.service.js';
@@ -30,6 +36,8 @@ export class ProjectsService {
     private readonly applications: ApplicationsService,
     private readonly pipeline: PipelineService,
     private readonly storage: LocalStorageService,
+    @Inject(forwardRef(() => DiscoveryService))
+    private readonly discovery: DiscoveryService,
   ) {}
 
   /**
@@ -86,6 +94,24 @@ export class ProjectsService {
     this.logger.log(
       `Project ${project.id} created, pipeline started (${dto.url})`,
     );
+
+    // Discovery cache: clips were made from this video (manually pasted URL
+    // or picked from discovery) — never suggest it again. Best-effort.
+    if (project.sourceVideoId) {
+      const raw = details.raw;
+      await this.discovery.markUsed(application.id, {
+        sourceVideoId: project.sourceVideoId,
+        url: project.sourceUrl,
+        title: project.title ?? 'Untitled',
+        channelName: details.channelName,
+        thumbnail: project.thumbnail ?? null,
+        durationSeconds: details.durationSeconds,
+        viewCount: typeof raw.view_count === 'number' ? raw.view_count : null,
+        likeCount: typeof raw.like_count === 'number' ? raw.like_count : null,
+        publishedAt: toUploadDate(raw.upload_date),
+      });
+    }
+
     return project;
   }
 

@@ -7,24 +7,25 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import type { Project } from "../../src/api/types";
-import { useProjects, useDeleteProject } from "../../src/queries/use-projects";
-import { useSelectedApplication } from "../../src/queries/use-selected-application";
-import { toast } from "../../src/store/toast-store";
-import { ApplicationSwitcher } from "../../src/components/applications/application-switcher";
-import { FirstRunExperience } from "../../src/components/applications/first-run-experience";
-import { HomeHeader } from "../../src/components/projects/home-header";
-import { NoProjectsHero } from "../../src/components/projects/no-projects-hero";
-import { ProjectCard } from "../../src/components/projects/project-card";
-import { YoutubeUrlInput } from "../../src/components/projects/youtube-url-input";
-import { AppText } from "../../src/components/ui/app-text";
-import { Screen } from "../../src/components/ui/screen";
-import { Skeleton } from "../../src/components/ui/skeleton";
-import { colors, radii } from "../../src/theme";
+import type { Project } from "../../../src/api/types";
+import { useProjects, useDeleteProject } from "../../../src/queries/use-projects";
+import { useSelectedApplication } from "../../../src/queries/use-selected-application";
+import { toast } from "../../../src/store/toast-store";
+import { ApplicationSwitcher } from "../../../src/components/applications/application-switcher";
+import { FirstRunExperience } from "../../../src/components/applications/first-run-experience";
+import { HomeHeader } from "../../../src/components/projects/home-header";
+import { NoProjectsHero } from "../../../src/components/projects/no-projects-hero";
+import { ProjectCard } from "../../../src/components/projects/project-card";
+import { YoutubeUrlInput } from "../../../src/components/projects/youtube-url-input";
+import { AppText } from "../../../src/components/ui/app-text";
+import { Screen } from "../../../src/components/ui/screen";
+import { Skeleton } from "../../../src/components/ui/skeleton";
+import { colors, radii } from "../../../src/theme";
 
 /**
  * Home — dashboard for the selected application: YouTube link input, active
- * projects, bin shortcut, application switching (requirements #2, #3, #5).
+ * projects, bin shortcut, application switching. Podcast discovery lives on
+ * its own Discover tab.
  */
 export default function HomeScreen() {
   const router = useRouter();

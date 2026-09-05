@@ -54,3 +54,17 @@ export function formatRelativeDate(iso: string | null | undefined): string {
 export function pluralize(count: number, singular: string, plural?: string): string {
   return count === 1 ? singular : (plural ?? `${singular}s`);
 }
+
+/** 950 → "950" · 12_400 → "12.4K" · 2_300_000 → "2.3M" */
+export function formatCount(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return '—';
+  if (value < 1000) return String(value);
+  const units = ['K', 'M', 'B'];
+  let current = value;
+  let unit = -1;
+  while (current >= 1000 && unit < units.length - 1) {
+    current /= 1000;
+    unit += 1;
+  }
+  return `${current.toFixed(current >= 100 ? 0 : 1)}${units[unit]}`;
+}

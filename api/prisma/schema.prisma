@@ -131,6 +131,23 @@ enum DownloadState {
   FAILED
 }
 
+/// Content language of an application — drives podcast discovery
+/// (which podcasters to search, which captions to expect).
+enum PodcastLanguage {
+  ENGLISH
+  HINDI
+}
+
+/// Lifecycle of a discovered podcast suggestion: SUGGESTED rows are never
+/// persisted (suggestions are computed live) — only the two cache states
+/// are stored so a video is never suggested again:
+///  - USED: a project was created from this video (via discovery or manually)
+///  - NOT_INTERESTED: the user dismissed the suggestion
+enum DiscoveryStatus {
+  USED
+  NOT_INTERESTED
+}
+
 // ---------------------------------------------------------------------------
 // Domain models
 // ---------------------------------------------------------------------------
@@ -138,17 +155,51 @@ enum DownloadState {
 /// An "application" is a content idea (e.g. "podcast-clips"). Future ideas
 /// (AI scene videos, merged shorts, ...) are new rows, not new code paths.
 model Application {
-  id          String    @id @default(uuid()) @map("application_id")
+  id          String             @id @default(uuid()) @map("application_id")
   name        String
   description String?
-  isActive    Boolean   @default(true) @map("is_active")
-  userId      String    @map("user_id")
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isActive    Boolean            @default(true) @map("is_active")
+  /// Language of the content this app produces — podcast discovery picks
+  /// the podcaster catalog from it.
+  language    PodcastLanguage    @default(ENGLISH)
+  userId      String             @map("user_id")
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   projects    Project[]
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  discoveries DiscoveredPodcast[]
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
 
   @@map("applications")
+}
+
+/// Discovery cache entry — one row per (application, source video) the user
+/// has acted on. Suggestions are computed live from YouTube and are never
+/// stored; a row appears only when the video becomes USED (a project was
+/// created from it) or NOT_INTERESTED (user dismissed it), and either state
+/// excludes the video from future discovery results.
+model DiscoveredPodcast {
+  id              String          @id @default(uuid()) @map("discovery_id")
+  sourceType      SourceType      @default(YOUTUBE) @map("source_type")
+  /// Provider-native video id (YouTube video id) — the dedupe key.
+  sourceVideoId   String          @map("source_video_id")
+  url             String
+  title           String
+  channelName     String?         @map("channel_name")
+  thumbnail       String?
+  /// duration in seconds
+  durationSeconds Int?            @map("duration_seconds")
+  viewCount       Int?            @map("view_count")
+  likeCount       Int?            @map("like_count")
+  publishedAt     DateTime?       @map("published_at")
+  status          DiscoveryStatus
+  applicationId   String          @map("application_id")
+  application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@unique([applicationId, sourceVideoId])
+  @@index([applicationId, status])
+  @@map("discovered_podcasts")
 }
 
 model Project {

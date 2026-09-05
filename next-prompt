@@ -1,0 +1,4 @@
+Hey, I want to add few more features on ready clips, specially in ready:
+	1. First there must be an option to say it posted this clip, I can have a toggle and a database field isPosted, if it's already posted they show them but reduce the opacity so that i can easily know it's been already post.
+	2. Make a clip as favorite, Similar to isPosted I also want to add one more toggle similar to isPosted for making a clip as favorite and at the top i want one filter on ready clip so that i can get clips which are posted or clips which are favorite.
+	3. Similar to on clips, where i can add color grading i also want an options on ready clip as well for make color grading from ready clip directly instead of going to clips again for adding color grading.

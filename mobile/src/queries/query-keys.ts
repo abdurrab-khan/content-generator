@@ -10,4 +10,9 @@ export const queryKeys = {
   rawVideos: (projectId: string) => ['raw-videos', projectId] as const,
   colorGradingPresets: ['color-grading-presets'] as const,
   clipRenders: (clipId: string) => ['clip-renders', clipId] as const,
+  discoveryPrefix: ['discovery'] as const,
+  discoveryPodcasters: (applicationId: string) =>
+    ['discovery', 'podcasters', applicationId] as const,
+  discoveryPodcasts: (applicationId: string, mode: string) =>
+    ['discovery', 'podcasts', applicationId, mode] as const,
 };

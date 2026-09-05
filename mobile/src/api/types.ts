@@ -27,6 +27,9 @@ export type DownloadState = 'DOWNLOADING' | 'DOWNLOADED' | 'FAILED';
 
 export type SourceType = 'YOUTUBE' | 'TWITCH' | 'UPLOAD';
 
+/** Content language of an application — drives the discovery podcaster catalog. */
+export type PodcastLanguage = 'ENGLISH' | 'HINDI';
+
 // ---------------------------------------------------------------------------
 // Entities
 // ---------------------------------------------------------------------------
@@ -46,6 +49,7 @@ export interface Application {
   name: string;
   description: string | null;
   isActive: boolean;
+  language: PodcastLanguage;
   userId: string;
   createdAt: string;
   updatedAt: string;
@@ -165,6 +169,46 @@ export interface ProjectDetail extends Project {
   clips: ClipWithRenders[];
   videos: Video[];
   rawVideos: RawVideo[];
+}
+
+// ---------------------------------------------------------------------------
+// Podcast discovery
+// ---------------------------------------------------------------------------
+
+/** popular = all-time most-viewed · trending = recent uploads ranked by views */
+export type DiscoveryMode = 'popular' | 'trending';
+
+/** Curated podcaster catalog entry (server: discovery/podcasters.catalog.ts). */
+export interface PodcasterEntry {
+  name: string;
+  query: string;
+}
+
+/** GET /api/discovery/podcasters */
+export interface PodcasterCatalog {
+  language: PodcastLanguage;
+  podcasters: PodcasterEntry[];
+}
+
+/** One podcast suggestion from GET /api/discovery/podcasts. */
+export interface DiscoveredPodcast {
+  sourceVideoId: string;
+  url: string;
+  title: string;
+  thumbnail: string | null;
+  channelName: string | null;
+  podcasterName: string;
+  durationSeconds: number | null;
+  viewCount: number | null;
+  likeCount: number | null;
+  publishedAt: string | null;
+}
+
+/** GET /api/discovery/podcasts response payload. */
+export interface DiscoveredPodcastsResult {
+  items: DiscoveredPodcast[];
+  language: PodcastLanguage;
+  mode: DiscoveryMode;
 }
 
 // ---------------------------------------------------------------------------

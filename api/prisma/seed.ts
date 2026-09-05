@@ -41,6 +41,7 @@ async function main(): Promise<void> {
         name: DEFAULT_APPLICATION_NAME,
         description:
           'Generate viral short clips from long-form podcast videos.',
+        language: 'ENGLISH',
       },
     });
     console.log(`Created application "${created.name}" (${created.id})`);

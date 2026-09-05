@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
-import type { Application } from '../../generated/prisma/client.js';
+import {
+  PodcastLanguage,
+  type Application,
+} from '../../generated/prisma/client.js';
 import type { CreateApplicationDto } from './dto/create-application.dto.js';
 
 export const DEFAULT_APPLICATION_NAME = 'podcast-clips';
@@ -39,7 +42,12 @@ export class ApplicationsService {
     dto: CreateApplicationDto,
   ): Promise<Application> {
     return this.prisma.application.create({
-      data: { userId, name: dto.name, description: dto.description },
+      data: {
+        userId,
+        name: dto.name,
+        description: dto.description,
+        language: PodcastLanguage[dto.language],
+      },
     });
   }
 }

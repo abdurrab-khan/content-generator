@@ -82,6 +82,38 @@ curl http://localhost:3000/api/videos -b cookies.txt          # final clips
 curl http://localhost:3000/api/videos/VIDEO_ID/stream -b cookies.txt -O
 ```
 
+## Podcast discovery
+
+Find trending / all-time popular podcast episodes on YouTube without pasting
+URLs by hand. Each `Application` has a `language` (`ENGLISH` | `HINDI`) that
+picks a curated podcaster catalog (Joe Rogan, Diary of a CEO, Lex Fridman… /
+Raj Shamani, Nikhil Kamath, Prakhar Gupta… — see
+`api/src/modules/discovery/podcasters.catalog.ts`).
+
+```bash
+# podcaster catalog for the app's language
+curl "http://localhost:3000/api/discovery/podcasters?applicationId=APP_ID" -b cookies.txt
+
+# trending (recent, ranked by views) or popular (all-time most viewed)
+curl "http://localhost:3000/api/discovery/podcasts?applicationId=APP_ID&mode=popular&limit=12" -b cookies.txt
+# → items: { sourceVideoId, url, title, thumbnail, channelName,
+#            podcasterName, durationSeconds, viewCount, likeCount, publishedAt }
+
+# act on a suggestion
+curl -X POST http://localhost:3000/api/discovery/podcasts/use -b cookies.txt \
+  -H 'Content-Type: application/json' -d '{"applicationId":"APP_ID","url":"https://www.youtube.com/watch?v=..."}'
+curl -X POST http://localhost:3000/api/discovery/podcasts/not-interested -b cookies.txt \
+  -H 'Content-Type: application/json' -d '{"applicationId":"APP_ID","sourceVideoId":"...","url":"...","title":"..."}'
+```
+
+**Never-show-again cache:** suggestions are computed live (flat yt-dlp
+searches, hydrated for stats) and are never stored. A `DiscoveredPodcast` row
+appears only when you act on a video — `USED` (a project was created from it,
+whether via discovery or a manually pasted URL) or `NOT_INTERESTED` — and both
+states permanently exclude the video from future results. Videos that already
+have a project are excluded too, even with no cache row.
+
+
 ## The system prompt
 
 `api/src/modules/agent/prompts/viral-clips.system.md` — replace the placeholder with
