@@ -14,6 +14,9 @@ COPY ./package.json ./pnpm-lock.yaml ./
 
 RUN pnpm install
 
+COPY ./prisma ./prisma
+RUN pnpm run prisma:generate
+
 COPY . .
 
 RUN pnpm run build
