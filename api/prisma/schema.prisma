@@ -1,6 +1,3 @@
-// Content Generator — Prisma schema
-// ER model: users (better-auth), applications, projects, clips, raw_videos, videos
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -74,6 +71,182 @@ model Verification {
 }
 
 // ---------------------------------------------------------------------------
+// Domain models
+// ---------------------------------------------------------------------------
+
+/// An "application" is a content idea (e.g. "podcast-clips"). Future ideas
+/// (AI scene videos, merged shorts, ...) are new rows, not new code paths.
+model Application {
+  id          String             @id @default(uuid()) @map("application_id")
+  name        String
+  description String?
+  isActive    Boolean            @default(true) @map("is_active")
+  language    PodcastLanguage    @default(ENGLISH)
+  userId      String             @map("user_id")
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects    Project[]
+  discoveries DiscoveredPodcast[]
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  @@map("applications")
+}
+
+/// Discovery cache entry — one row per (application, source video) the user
+/// has acted on. Suggestions are computed live from YouTube and are never
+/// stored; a row appears only when the video becomes USED (a project was
+/// created from it) or NOT_INTERESTED (user dismissed it), and either state
+/// excludes the video from future discovery results.
+model DiscoveredPodcast {
+  id              String          @id @default(uuid()) @map("discovery_id")
+  url             String
+  title           String
+  thumbnail       String?
+  podcastType     PodcastType
+  sourceVideoId   String          @map("source_video_id")
+  channelName     String?         @map("channel_name")
+  durationSeconds Int?            @map("duration_seconds")
+  viewCount       Int?            @map("view_count")
+  likeCount       Int?            @map("like_count")
+  publishedAt     DateTime?       @map("published_at")
+  applicationId   String          @map("application_id")
+  sourceType      SourceType      @default(YOUTUBE) @map("source_type")
+  application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@unique([applicationId, sourceVideoId])
+  @@index([applicationId])
+  @@map("discovered_podcasts")
+}
+
+model Project {
+  id             String        @id @default(uuid()) @map("project_id")
+  title          String?
+  description    String?
+  thumbnail      String?
+  status         RecordStatus  @default(ACTIVE)
+  pipelineState  PipelineState @default(CREATED) @map("pipeline_state")
+  sourceType     SourceType    @default(YOUTUBE) @map("source_type")
+  sourceUrl      String        @map("source_url")
+  sourceVideoId  String?       @map("source_video_id")
+  sourceInfo     Json?         @map("source_info")
+  transcriptPath String?       @map("transcript_path")
+  videoPath      String?       @map("video_path")
+  errorMessage   String?       @map("error_message")
+  applicationId  String        @map("application_id")
+  application    Application   @relation(fields: [applicationId], references: [id])
+  clips          Clip[]
+  rawVideos      RawVideo[]
+  videos         Video[]
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@index([applicationId])
+  @@map("projects")
+}
+
+model Clip {
+  id        String    @id @default(uuid()) @map("clip_id")
+  start     Float
+  end       Float
+  state     ClipState @default(NOT_STARTED)
+  clipInfo  Json?     @map("clip_info")
+  clipPath  String?     @map("clip_path")
+  projectId String      @map("project_id")
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  renders   ClipRender[]
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  @@index([projectId])
+  @@map("clips")
+}
+
+/// Shared color grading presets (built-in today; user-created later via
+/// `isBuiltIn = false`). `filterGraph` is a raw FFmpeg video filter chain,
+/// e.g. "curves=all='0/0 0.25/0.20 1/1',eq=contrast=1.18:saturation=1.18".
+model ColorGradingPreset {
+  id          String       @id @default(uuid()) @map("preset_id")
+  name        String       @unique
+  description String?
+  filterGraph String       @map("filter_graph")
+  bestFor     String?      @map("best_for")
+  previewPath String?      @map("preview_path")
+  isBuiltIn   Boolean      @default(true) @map("is_built_in")
+  status      RecordStatus @default(ACTIVE)
+  renders     ClipRender[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("color_grading_presets")
+}
+
+/// One variant produced from a cut clip — the original clip file is never
+/// touched. A clip can have many renders (one per effect combination);
+/// today the combination is just a color grading preset, later it grows
+/// (background music, captions, ...) via new nullable FKs + `options`.
+model ClipRender {
+  id                   String              @id @default(uuid()) @map("render_id")
+  state                RenderState         @default(PENDING)
+  outputPath           String?             @map("output_path")
+  errorMessage         String?             @map("error_message")
+  colorGradingPresetId String?             @map("color_grading_preset_id")
+  colorGradingPreset   ColorGradingPreset? @relation(fields: [colorGradingPresetId], references: [id], onDelete: Restrict)
+  variantKey           String              @map("variant_key")
+  options              Json?
+  clipId               String              @map("clip_id")
+  clip                 Clip                @relation(fields: [clipId], references: [id], onDelete: Cascade)
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  @@unique([clipId, variantKey])
+  @@index([clipId])
+  @@map("clip_renders")
+}
+
+/// Downloaded source material. In the podcast flow there is exactly one raw
+/// video per project; future flows (merged shorts, AI scene videos) will
+/// have many raw videos feeding one final Video.
+model RawVideo {
+  id            String        @id @default(uuid()) @map("raw_video_id")
+  title         String?
+  description   String?
+  tags          String[]
+  videoPath     String?       @map("video_path")
+  podcastInfo   Json?         @map("podcast_info")
+  status        RecordStatus  @default(ACTIVE)
+  downloadState DownloadState @default(DOWNLOADING) @map("download_state")
+  videoId       String?       @map("video_id")
+  projectId     String        @map("project_id")
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@index([projectId])
+  @@map("raw_videos")
+}
+
+/// Produced output (a cut clip today; a merged/AI video tomorrow).
+model Video {
+  id          String       @id @default(uuid()) @map("video_id")
+  title       String?
+  description String?
+  tags        String[]
+  status      RecordStatus @default(ACTIVE)
+  storagePath String?      @map("storage_path")
+  duration    Float?
+  clipId      String?      @map("clip_id")
+  projectId   String       @map("project_id")
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@index([projectId])
+  @@map("videos")
+}
+
+// ---------------------------------------------------------------------------
 // Domain enums
 // ---------------------------------------------------------------------------
 
@@ -138,208 +311,10 @@ enum PodcastLanguage {
   HINDI
 }
 
-/// Lifecycle of a discovered podcast suggestion: SUGGESTED rows are never
-/// persisted (suggestions are computed live) — only the two cache states
-/// are stored so a video is never suggested again:
-///  - USED: a project was created from this video (via discovery or manually)
-///  - NOT_INTERESTED: the user dismissed the suggestion
-enum DiscoveryStatus {
-  USED
-  NOT_INTERESTED
+// Type of the podcast video
+// Popular: Popular podcast either be older or newer
+// Tranding: Latest Tranding Podcasts
+enum PodcastType {
+  POPULAR
+  TRANDING
 }
-
-// ---------------------------------------------------------------------------
-// Domain models
-// ---------------------------------------------------------------------------
-
-/// An "application" is a content idea (e.g. "podcast-clips"). Future ideas
-/// (AI scene videos, merged shorts, ...) are new rows, not new code paths.
-model Application {
-  id          String             @id @default(uuid()) @map("application_id")
-  name        String
-  description String?
-  isActive    Boolean            @default(true) @map("is_active")
-  /// Language of the content this app produces — podcast discovery picks
-  /// the podcaster catalog from it.
-  language    PodcastLanguage    @default(ENGLISH)
-  userId      String             @map("user_id")
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projects    Project[]
-  discoveries DiscoveredPodcast[]
-  createdAt   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
-
-  @@map("applications")
-}
-
-/// Discovery cache entry — one row per (application, source video) the user
-/// has acted on. Suggestions are computed live from YouTube and are never
-/// stored; a row appears only when the video becomes USED (a project was
-/// created from it) or NOT_INTERESTED (user dismissed it), and either state
-/// excludes the video from future discovery results.
-model DiscoveredPodcast {
-  id              String          @id @default(uuid()) @map("discovery_id")
-  sourceType      SourceType      @default(YOUTUBE) @map("source_type")
-  /// Provider-native video id (YouTube video id) — the dedupe key.
-  sourceVideoId   String          @map("source_video_id")
-  url             String
-  title           String
-  channelName     String?         @map("channel_name")
-  thumbnail       String?
-  /// duration in seconds
-  durationSeconds Int?            @map("duration_seconds")
-  viewCount       Int?            @map("view_count")
-  likeCount       Int?            @map("like_count")
-  publishedAt     DateTime?       @map("published_at")
-  status          DiscoveryStatus
-  applicationId   String          @map("application_id")
-  application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
-
-  @@unique([applicationId, sourceVideoId])
-  @@index([applicationId, status])
-  @@map("discovered_podcasts")
-}
-
-model Project {
-  id             String        @id @default(uuid()) @map("project_id")
-  title          String?
-  description    String?
-  thumbnail      String?
-  status         RecordStatus  @default(ACTIVE)
-  pipelineState  PipelineState @default(CREATED) @map("pipeline_state")
-  sourceType     SourceType    @default(YOUTUBE) @map("source_type")
-  sourceUrl      String        @map("source_url")
-  sourceVideoId  String?       @map("source_video_id")
-  /// Provider-specific metadata (yt-dlp info JSON, twitch VOD info, ...)
-  sourceInfo     Json?         @map("source_info")
-  transcriptPath String?       @map("transcript_path")
-  videoPath      String?       @map("video_path")
-  errorMessage   String?       @map("error_message")
-  applicationId  String        @map("application_id")
-  application    Application   @relation(fields: [applicationId], references: [id])
-  clips          Clip[]
-  rawVideos      RawVideo[]
-  videos         Video[]
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-
-  @@index([applicationId])
-  @@map("projects")
-}
-
-model Clip {
-  id        String    @id @default(uuid()) @map("clip_id")
-  /// seconds from the start of the source video
-  start     Float
-  /// seconds from the start of the source video
-  end       Float
-  state     ClipState @default(NOT_STARTED)
-  /// { title, hook, viralityScore, reason, chunkIndex }
-  clipInfo  Json?     @map("clip_info")
-  clipPath  String?     @map("clip_path")
-  projectId String      @map("project_id")
-  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  renders   ClipRender[]
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
-
-  @@index([projectId])
-  @@map("clips")
-}
-
-/// Shared color grading presets (built-in today; user-created later via
-/// `isBuiltIn = false`). `filterGraph` is a raw FFmpeg video filter chain,
-/// e.g. "curves=all='0/0 0.25/0.20 1/1',eq=contrast=1.18:saturation=1.18".
-model ColorGradingPreset {
-  id          String       @id @default(uuid()) @map("preset_id")
-  name        String       @unique
-  description String?
-  /// Raw FFmpeg -vf filter chain applied when rendering a variant
-  filterGraph String       @map("filter_graph")
-  /// Short "works great on..." guidance for users new to grading
-  bestFor     String?      @map("best_for")
-  /// Storage-relative path of the short graded preview loop (null until generated)
-  previewPath String?      @map("preview_path")
-  isBuiltIn   Boolean      @default(true) @map("is_built_in")
-  status      RecordStatus @default(ACTIVE)
-  renders     ClipRender[]
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-
-  @@map("color_grading_presets")
-}
-
-/// One variant produced from a cut clip — the original clip file is never
-/// touched. A clip can have many renders (one per effect combination);
-/// today the combination is just a color grading preset, later it grows
-/// (background music, captions, ...) via new nullable FKs + `options`.
-model ClipRender {
-  id                   String              @id @default(uuid()) @map("render_id")
-  state                RenderState         @default(PENDING)
-  outputPath           String?             @map("output_path")
-  errorMessage         String?             @map("error_message")
-  /// Which effects were requested — all nullable, at least one required.
-  colorGradingPresetId String?             @map("color_grading_preset_id")
-  colorGradingPreset   ColorGradingPreset? @relation(fields: [colorGradingPresetId], references: [id], onDelete: Restrict)
-  /// Server-computed dedupe key per effect combination, e.g.
-  /// "preset:<uuid>" (later "preset:<uuid>+audio:<uuid>"). Nullable-safe,
-  /// unlike a multi-column unique over nullable FKs.
-  variantKey           String              @map("variant_key")
-  /// Per-effect parameters for future options (music volume, fade, ...)
-  options              Json?
-  clipId               String              @map("clip_id")
-  clip                 Clip                @relation(fields: [clipId], references: [id], onDelete: Cascade)
-  createdAt            DateTime            @default(now()) @map("created_at")
-  updatedAt            DateTime            @updatedAt @map("updated_at")
-
-  @@unique([clipId, variantKey])
-  @@index([clipId])
-  @@map("clip_renders")
-}
-
-/// Downloaded source material. In the podcast flow there is exactly one raw
-/// video per project; future flows (merged shorts, AI scene videos) will
-/// have many raw videos feeding one final Video.
-model RawVideo {
-  id            String        @id @default(uuid()) @map("raw_video_id")
-  title         String?
-  description   String?
-  tags          String[]
-  videoPath     String?       @map("video_path")
-  podcastInfo   Json?         @map("podcast_info")
-  status        RecordStatus  @default(ACTIVE)
-  downloadState DownloadState @default(DOWNLOADING) @map("download_state")
-  /// Future: the final Video this raw material contributed to (multi-clip merges)
-  videoId       String?       @map("video_id")
-  projectId     String        @map("project_id")
-  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-
-  @@index([projectId])
-  @@map("raw_videos")
-}
-
-/// Produced output (a cut clip today; a merged/AI video tomorrow).
-model Video {
-  id          String       @id @default(uuid()) @map("video_id")
-  title       String?
-  description String?
-  tags        String[]
-  status      RecordStatus @default(ACTIVE)
-  storagePath String?      @map("storage_path")
-  /// duration in seconds
-  duration    Float?
-  /// Traceability: which clip produced this video (podcast flow)
-  clipId      String?      @map("clip_id")
-  projectId   String       @map("project_id")
-  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-
-  @@index([projectId])
-  @@map("videos")
-}
-

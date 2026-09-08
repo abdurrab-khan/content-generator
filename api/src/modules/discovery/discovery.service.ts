@@ -94,11 +94,42 @@ export class DiscoveryService {
   }
 
   /**
+   * Get Podcasts from the database, based on the mode either "popular" or "trading" one
+   */
+  async findPodcasts(
+    userId: string,
+    query: ListPodcastsQuery,
+  ): Promise<{
+    items: DiscoveredPodcastItem[];
+    language: PodcastLanguage;
+    mode: 'popular' | 'trending';
+  }> {
+    const mode = query.mode;
+    const application = await this.applications.findOwnedOrThrow(
+      userId,
+      query.applicationId,
+    );
+
+    const podcasts = await this.prisma.discoveredPodcast.findMany({
+      where: {
+        applicationId: query.applicationId,
+        podcastType: query.mode === 'popular' ? 'POPULAR' : 'TRANDING',
+      },
+    });
+
+    return {
+      items: podcasts,
+      language: 'ENGLISH',
+      mode: mode,
+    };
+  }
+
+  /**
    * Find podcast episodes: one flat search per podcaster, keep long-form
    * results the user has not seen, hydrate the survivors for views/likes,
    * then rank by mode.
    */
-  async findPodcasts(
+  async refetchPodcasts(
     userId: string,
     query: ListPodcastsQuery,
   ): Promise<{
@@ -120,9 +151,7 @@ export class DiscoveryService {
           .map((name) => name.trim().toLowerCase())
           .filter(Boolean),
       );
-      podcasters = podcasters.filter((p) =>
-        wanted.has(p.name.toLowerCase()),
-      );
+      podcasters = podcasters.filter((p) => wanted.has(p.name.toLowerCase()));
     }
 
     // 1. Flat search per podcaster (bounded concurrency) → candidates.
@@ -186,7 +215,6 @@ export class DiscoveryService {
       mode: query.mode,
     };
   }
-
 
   /**
    * "Not interested" — persist the snapshot as NOT_INTERESTED so discovery
@@ -274,7 +302,6 @@ export class DiscoveryService {
     }
   }
 
-
   // -------------------------------------------------------------------------
 
   /** Videos to never suggest: USED/NOT_INTERESTED rows + existing projects. */
@@ -356,8 +383,7 @@ export class DiscoveryService {
         typeof info?.view_count === 'number'
           ? info.view_count
           : entry.viewCount,
-      likeCount:
-        typeof info?.like_count === 'number' ? info.like_count : null,
+      likeCount: typeof info?.like_count === 'number' ? info.like_count : null,
       publishedAt: parseUploadDate(info?.upload_date),
     };
   }
@@ -397,4 +423,3 @@ export async function runPool<T, R>(
   await Promise.all(lanes);
   return results;
 }
-

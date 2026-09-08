@@ -8,7 +8,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import type { Project } from "../../../src/api/types";
-import { useProjects, useDeleteProject } from "../../../src/queries/use-projects";
+import {
+  useProjects,
+  useDeleteProject,
+} from "../../../src/queries/use-projects";
 import { useSelectedApplication } from "../../../src/queries/use-selected-application";
 import { toast } from "../../../src/store/toast-store";
 import { ApplicationSwitcher } from "../../../src/components/applications/application-switcher";

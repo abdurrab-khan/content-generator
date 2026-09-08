@@ -3,6 +3,8 @@ services:
     image: postgres:17-alpine
     container_name: content-generator-postgres
     restart: unless-stopped
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER?:"Error -- Postgres user is required"}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?:"Error -- Postgres user is required"}

@@ -1,22 +1,17 @@
-import {
-  ActivityIndicator,
-  Linking,
-  Pressable,
-  View,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import type { DiscoveredPodcast } from '../../api/types';
+import { ActivityIndicator, Linking, Pressable, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import type { DiscoveredPodcast } from "../../api/types";
 import {
   formatCount,
   formatDuration,
   formatRelativeDate,
-} from '../../lib/format';
-import { toast } from '../../store/toast-store';
-import { colors, fonts, gradients, radii } from '../../theme';
-import { AppText } from '../ui/app-text';
-import { Card } from '../ui/card';
+} from "../../lib/format";
+import { toast } from "../../store/toast-store";
+import { colors, fonts, gradients, radii } from "../../theme";
+import { AppText } from "../ui/app-text";
+import { Card } from "../ui/card";
 
 /**
  * One discovered podcast suggestion in the horizontal carousel — thumbnail
@@ -30,7 +25,7 @@ async function openOnYouTube(url: string): Promise<void> {
   try {
     await Linking.openURL(url);
   } catch {
-    toast.error('Could not open YouTube.');
+    toast.error("Could not open YouTube.");
   }
 }
 
@@ -49,98 +44,105 @@ export function PodcastCard({
   onNotInterested,
 }: PodcastCardProps) {
   return (
-    <Card padded={false} style={{ width: 264 }}>
+    <Card padded={false}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Watch on YouTube"
         onPress={() => void openOnYouTube(podcast.url)}
       >
         <View style={{ aspectRatio: 16 / 9, backgroundColor: colors.cardAlt }}>
-        {podcast.thumbnail ? (
-          <Image
-            source={{ uri: podcast.thumbnail }}
+          {podcast.thumbnail ? (
+            <Image
+              source={{ uri: podcast.thumbnail }}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+              }}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="mic-outline" size={30} color={colors.textDim} />
+            </View>
+          )}
+          <LinearGradient
+            colors={[...gradients.thumbnailScrim]}
             style={{
-              position: 'absolute',
-              top: 0,
+              position: "absolute",
               left: 0,
               right: 0,
+              top: 0,
               bottom: 0,
             }}
-            contentFit="cover"
-            transition={200}
           />
-        ) : (
-          <View
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Ionicons name="mic-outline" size={30} color={colors.textDim} />
-          </View>
-        )}
-        <LinearGradient
-          colors={[...gradients.thumbnailScrim]}
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-          }}
-        />
-        <View
-          style={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-            backgroundColor: 'rgba(0,0,0,0.55)',
-            borderRadius: radii.full,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-          }}
-        >
-          <Ionicons name="mic" size={10} color={colors.primaryBright} />
-          <AppText variant="caption" style={{ color: '#fff', fontSize: 10 }}>
-            {podcast.podcasterName}
-          </AppText>
-        </View>
-        {podcast.durationSeconds != null ? (
           <View
             style={{
-              position: 'absolute',
-              bottom: 8,
-              right: 8,
-              backgroundColor: 'rgba(0,0,0,0.7)',
-              borderRadius: radii.sm,
-              paddingHorizontal: 6,
-              paddingVertical: 2,
+              position: "absolute",
+              top: 8,
+              left: 8,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              backgroundColor: "rgba(0,0,0,0.55)",
+              borderRadius: radii.full,
+              paddingHorizontal: 8,
+              paddingVertical: 4,
             }}
           >
-            <AppText variant="caption" style={{ color: '#fff', fontSize: 10 }}>
-              {formatDuration(podcast.durationSeconds)}
+            <Ionicons name="mic" size={10} color={colors.primaryBright} />
+            <AppText variant="caption" style={{ color: "#fff", fontSize: 10 }}>
+              {podcast.podcasterName}
             </AppText>
           </View>
-        ) : null}
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 8,
-            left: 8,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-            backgroundColor: 'rgba(0,0,0,0.55)',
-            borderRadius: radii.full,
-            paddingHorizontal: 7,
-            paddingVertical: 3,
-          }}
-        >
-          <Ionicons name="logo-youtube" size={11} color="#FF4D4D" />
-          <AppText variant="caption" style={{ color: '#fff', fontSize: 10 }}>
-            YouTube
-          </AppText>
-        </View>
+          {podcast.durationSeconds != null ? (
+            <View
+              style={{
+                position: "absolute",
+                bottom: 8,
+                right: 8,
+                backgroundColor: "rgba(0,0,0,0.7)",
+                borderRadius: radii.sm,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+              }}
+            >
+              <AppText
+                variant="caption"
+                style={{ color: "#fff", fontSize: 10 }}
+              >
+                {formatDuration(podcast.durationSeconds)}
+              </AppText>
+            </View>
+          ) : null}
+          <View
+            style={{
+              position: "absolute",
+              bottom: 8,
+              left: 8,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              backgroundColor: "rgba(0,0,0,0.55)",
+              borderRadius: radii.full,
+              paddingHorizontal: 7,
+              paddingVertical: 3,
+            }}
+          >
+            <Ionicons name="logo-youtube" size={11} color="#FF4D4D" />
+            <AppText variant="caption" style={{ color: "#fff", fontSize: 10 }}>
+              YouTube
+            </AppText>
+          </View>
         </View>
       </Pressable>
 
@@ -159,19 +161,23 @@ export function PodcastCard({
           </AppText>
         </Pressable>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <Ionicons name="eye-outline" size={12} color={colors.textDim} />
           <AppText variant="caption">{formatCount(podcast.viewCount)}</AppText>
           <AppText variant="caption">·</AppText>
           <Ionicons name="thumbs-up-outline" size={11} color={colors.textDim} />
           <AppText variant="caption">{formatCount(podcast.likeCount)}</AppText>
           <AppText variant="caption">·</AppText>
-          <AppText variant="caption" numberOfLines={1} style={{ flexShrink: 1 }}>
+          <AppText
+            variant="caption"
+            numberOfLines={1}
+            style={{ flexShrink: 1 }}
+          >
             {formatRelativeDate(podcast.publishedAt)}
           </AppText>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Make clips from this podcast"
@@ -179,9 +185,9 @@ export function PodcastCard({
             onPress={onMakeClips}
             style={{
               flex: 1,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
               gap: 6,
               height: 34,
               borderRadius: radii.md,
@@ -196,7 +202,7 @@ export function PodcastCard({
                 <Ionicons name="flash" size={13} color="#fff" />
                 <AppText
                   variant="label"
-                  style={{ color: '#fff', fontFamily: fonts.semibold }}
+                  style={{ color: "#fff", fontFamily: fonts.semibold }}
                 >
                   Make clips
                 </AppText>
@@ -213,8 +219,8 @@ export function PodcastCard({
               width: 34,
               height: 34,
               borderRadius: radii.md,
-              alignItems: 'center',
-              justifyContent: 'center',
+              alignItems: "center",
+              justifyContent: "center",
               borderWidth: 1,
               borderColor: colors.border,
               backgroundColor: colors.cardAlt,

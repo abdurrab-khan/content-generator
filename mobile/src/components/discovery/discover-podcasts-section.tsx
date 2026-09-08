@@ -1,23 +1,19 @@
-import { useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { ApiError } from '../../api/http';
-import type {
-  Application,
-  DiscoveryMode,
-  Project,
-} from '../../api/types';
+import React, { useState } from "react";
+import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { ApiError } from "../../api/http";
+import type { Application, DiscoveryMode, Project } from "../../api/types";
 import {
   useDiscoveredPodcasts,
   useNotInterestedPodcast,
   useUsePodcast,
-} from '../../queries/use-discovery';
-import { toast } from '../../store/toast-store';
-import { colors, radii } from '../../theme';
-import { AppText } from '../ui/app-text';
-import { SegmentedTabs } from '../ui/segmented-tabs';
-import { Skeleton } from '../ui/skeleton';
-import { PodcastCard } from './podcast-card';
+} from "../../queries/use-discovery";
+import { toast } from "../../store/toast-store";
+import { colors, radii } from "../../theme";
+import { AppText } from "../ui/app-text";
+import { SegmentedTabs } from "../ui/segmented-tabs";
+import { Skeleton } from "../ui/skeleton";
+import { PodcastCard } from "./podcast-card";
 
 /**
  * Home-page discovery rail — trending / all-time popular podcast episodes
@@ -31,20 +27,20 @@ export interface DiscoverPodcastsSectionProps {
 }
 
 const MODE_TABS: { key: DiscoveryMode; label: string }[] = [
-  { key: 'popular', label: 'Popular' },
-  { key: 'trending', label: 'Trending' },
+  { key: "popular", label: "Popular" },
+  { key: "trending", label: "Trending" },
 ];
 
 export function DiscoverPodcastsSection({
   application,
   onProjectCreated,
 }: DiscoverPodcastsSectionProps) {
-  const [mode, setMode] = useState<DiscoveryMode>('popular');
+  const [mode, setMode] = useState<DiscoveryMode>("popular");
   const [busyVideoId, setBusyVideoId] = useState<string | null>(null);
 
-  const podcasts = useDiscoveredPodcasts(application.id, mode);
-  const notInterested = useNotInterestedPodcast();
   const usePodcast = useUsePodcast();
+  const notInterested = useNotInterestedPodcast();
+  const podcasts = useDiscoveredPodcasts(application.id, mode);
 
   const items = podcasts.data?.items ?? [];
 
@@ -55,13 +51,13 @@ export function DiscoverPodcastsSection({
         applicationId: application.id,
         podcast,
       });
-      toast.success('Project created — pipeline started');
+      toast.success("Project created — pipeline started");
       onProjectCreated(project);
     } catch (cause) {
       toast.error(
         cause instanceof ApiError
           ? cause.message
-          : 'Could not create the project.',
+          : "Could not create the project.",
       );
     } finally {
       setBusyVideoId(null);
@@ -75,10 +71,10 @@ export function DiscoverPodcastsSection({
         applicationId: application.id,
         podcast,
       });
-      toast.success('Got it — this one won’t come back');
+      toast.success("Got it — this one won’t come back");
     } catch (cause) {
       toast.error(
-        cause instanceof ApiError ? cause.message : 'Could not dismiss it.',
+        cause instanceof ApiError ? cause.message : "Could not dismiss it.",
       );
     } finally {
       setBusyVideoId(null);
@@ -86,95 +82,107 @@ export function DiscoverPodcastsSection({
   };
 
   return (
-    <View style={{ gap: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <AppText variant="subheading">Discover podcasts</AppText>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-            backgroundColor: colors.card,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: radii.full,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-          }}
-        >
-          <Ionicons
-            name="language-outline"
-            size={11}
-            color={colors.primaryBright}
-          />
-          <AppText variant="caption" style={{ color: colors.textMuted }}>
-            {application.language === 'HINDI' ? 'Hindi' : 'English'}
-          </AppText>
-        </View>
-        <View style={{ flex: 1 }} />
-        {podcasts.isRefetching && !podcasts.isLoading ? (
-          <Ionicons name="sync" size={13} color={colors.textDim} />
-        ) : null}
-      </View>
-
-      <SegmentedTabs tabs={MODE_TABS} active={mode} onChange={setMode} />
-
-      {podcasts.isLoading ? (
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <Skeleton height={236} width={264} borderRadius={radii.xl} />
-          <Skeleton height={236} width={264} borderRadius={radii.xl} />
-        </View>
-      ) : podcasts.isError ? (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 10,
-            backgroundColor: colors.card,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: radii.lg,
-            padding: 14,
-          }}
-        >
-          <Ionicons
-            name="cloud-offline-outline"
-            size={18}
-            color={colors.textDim}
-          />
-          <AppText variant="muted" style={{ flex: 1, fontSize: 13 }}>
-            {podcasts.error instanceof ApiError
-              ? podcasts.error.message
-              : 'Could not load suggestions — searching YouTube takes a moment.'}
-          </AppText>
-          <Pressable onPress={() => void podcasts.refetch()} hitSlop={8}>
-            <AppText variant="label" style={{ color: colors.primaryBright }}>
-              Retry
-            </AppText>
-          </Pressable>
-        </View>
-      ) : items.length === 0 ? (
-        <AppText variant="muted" style={{ fontSize: 13 }}>
-          No fresh episodes right now — everything found so far is already in
-          your projects or dismissed. Try the other tab.
-        </AppText>
-      ) : (
-        <FlatList
-          horizontal
-          data={items}
-          keyExtractor={(item) => item.sourceVideoId}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 12 }}
-          renderItem={({ item }) => (
-            <PodcastCard
-              podcast={item}
-              busy={busyVideoId === item.sourceVideoId}
-              onMakeClips={() => void makeClips(item)}
-              onNotInterested={() => void dismiss(item)}
-            />
-          )}
+    <FlatList
+      data={items}
+      keyExtractor={(item) => item.sourceVideoId}
+      contentContainerStyle={{
+        gap: 12,
+        paddingInline: 20,
+        paddingBottom: 20,
+      }}
+      renderItem={({ item }) => (
+        <PodcastCard
+          podcast={item}
+          busy={busyVideoId === item.sourceVideoId}
+          onMakeClips={() => void makeClips(item)}
+          onNotInterested={() => void dismiss(item)}
         />
       )}
-    </View>
+      refreshControl={
+        <RefreshControl
+          refreshing={podcasts.isRefetching}
+          onRefresh={() => podcasts.refetch()}
+        />
+      }
+      ListHeaderComponent={
+        <View style={{ gap: 12, paddingTop: 14 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <AppText variant="subheading">Discover podcasts</AppText>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                backgroundColor: colors.card,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: radii.full,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+              }}
+            >
+              <Ionicons
+                name="language-outline"
+                size={11}
+                color={colors.primaryBright}
+              />
+              <AppText variant="caption" style={{ color: colors.textMuted }}>
+                {application.language === "HINDI" ? "Hindi" : "English"}
+              </AppText>
+            </View>
+          </View>
+          <SegmentedTabs tabs={MODE_TABS} active={mode} onChange={setMode} />
+        </View>
+      }
+      ListEmptyComponent={
+        podcasts.isLoading ? (
+          <View style={{ gap: 12 }}>
+            <Skeleton height={236} borderRadius={radii.xl} />
+            <Skeleton height={236} borderRadius={radii.xl} />
+          </View>
+        ) : podcasts.isError ? (
+          <React.Fragment>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+                backgroundColor: colors.card,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: radii.lg,
+                padding: 14,
+              }}
+            >
+              <Ionicons
+                name="cloud-offline-outline"
+                size={18}
+                color={colors.textDim}
+              />
+              <AppText variant="muted" style={{ flex: 1, fontSize: 13 }}>
+                {podcasts.error instanceof ApiError
+                  ? podcasts.error.message
+                  : "Could not load suggestions — searching YouTube takes a moment."}
+              </AppText>
+              <Pressable onPress={() => void podcasts.refetch()} hitSlop={8}>
+                <AppText
+                  variant="label"
+                  style={{ color: colors.primaryBright }}
+                >
+                  Retry
+                </AppText>
+              </Pressable>
+            </View>
+            ) : items.length === 0 ? (
+            <AppText variant="muted" style={{ fontSize: 13 }}>
+              No fresh episodes right now — everything found so far is already
+              in your projects or dismissed. Try the other tab.
+            </AppText>
+          </React.Fragment>
+        ) : (
+          <></>
+        )
+      }
+    />
   );
 }
