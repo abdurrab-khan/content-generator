@@ -39,13 +39,26 @@ export class DiscoveryController {
   @Get('podcasts')
   @ApiOperation({
     summary: 'Find trending / all-time popular podcast episodes',
+    description: 'Returns the existing podcast from the database',
+  })
+  findPodcasts(
+    @Session() session: UserSession,
+    @Query(new ZodValidationPipe(listPodcastsQuerySchema))
+    query: ListPodcastsQuery,
+  ) {
+    return this.discovery.findPodcasts(session.user.id, query);
+  }
+
+  @Post('podcasts/refetch')
+  @ApiOperation({
+    summary: 'Refetch the podcast again based on the query',
     description:
       'Searches YouTube for the podcasters of the application language. ' +
       'mode=popular ranks all-time most-viewed episodes; mode=trending ' +
       'surfaces recent episodes ranked by views. Videos already used for a ' +
       'project or marked "not interested" are never returned.',
   })
-  findPodcasts(
+  refetchPodcasts(
     @Session() session: UserSession,
     @Query(new ZodValidationPipe(listPodcastsQuerySchema))
     query: ListPodcastsQuery,

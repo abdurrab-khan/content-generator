@@ -103,6 +103,7 @@ model DiscoveredPodcast {
   title           String
   thumbnail       String?
   podcastType     PodcastType
+  podcasterName   String
   sourceVideoId   String          @map("source_video_id")
   channelName     String?         @map("channel_name")
   durationSeconds Int?            @map("duration_seconds")

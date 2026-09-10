@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import {
-  DiscoveryStatus,
   PodcastLanguage,
+  PodcastType,
+  SourceType,
 } from '../../generated/prisma/client.js';
 import { ApplicationsService } from '../applications/applications.service.js';
 import {
@@ -30,16 +31,19 @@ const HYDRATE_CONCURRENCY = 4;
 
 /** A podcast suggestion returned to the client. */
 export interface DiscoveredPodcastItem {
-  sourceVideoId: string;
+  id: string;
   url: string;
   title: string;
+  sourceType: SourceType;
+  sourceVideoId: string;
   thumbnail: string | null;
   channelName: string | null;
   podcasterName: string;
   durationSeconds: number | null;
   viewCount: number | null;
   likeCount: number | null;
-  publishedAt: string | null;
+  publishedAt: Date | null;
+  createdAt: Date;
 }
 
 /** Snapshot of a discovered video used to persist a cache row. */
@@ -112,15 +116,20 @@ export class DiscoveryService {
 
     const podcasts = await this.prisma.discoveredPodcast.findMany({
       where: {
-        applicationId: query.applicationId,
+        applicationId: application.id,
         podcastType: query.mode === 'popular' ? 'POPULAR' : 'TRANDING',
+      },
+      omit: {
+        updatedAt: true,
+        podcastType: true,
+        applicationId: true,
       },
     });
 
     return {
+      mode: mode,
       items: podcasts,
       language: 'ENGLISH',
-      mode: mode,
     };
   }
 
@@ -129,14 +138,9 @@ export class DiscoveryService {
    * results the user has not seen, hydrate the survivors for views/likes,
    * then rank by mode.
    */
-  async refetchPodcasts(
-    userId: string,
-    query: ListPodcastsQuery,
-  ): Promise<{
-    items: DiscoveredPodcastItem[];
-    language: PodcastLanguage;
-    mode: 'popular' | 'trending';
-  }> {
+  async refetchPodcasts(userId: string, query: ListPodcastsQuery) {
+    const mode =
+      query.mode === 'trending' ? PodcastType.TRANDING : PodcastType.POPULAR;
     const application = await this.applications.findOwnedOrThrow(
       userId,
       query.applicationId,
@@ -201,64 +205,81 @@ export class DiscoveryService {
         return item && !excludedIds.has(item.sourceVideoId) ? item : null;
       },
     );
-    const items = hydrated.filter(
-      (item): item is DiscoveredPodcastItem => item !== null,
-    );
+    const items = hydrated
+      .filter((item) => item !== null)
+      .map((d) => ({
+        ...d,
+        podcastType: mode,
+        applicationId: application.id,
+      }));
 
     // 4. Rank: both modes rank by views; trending searched date-sorted, so
     //    its pool is recent episodes — popularity within recency.
     items.sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0));
 
-    return {
-      items: items.slice(0, query.limit),
-      language: application.language,
-      mode: query.mode,
-    };
+    // Delete existing podcasts
+    if (items.length > 0) {
+      await this.prisma.discoveredPodcast.deleteMany({
+        where: {
+          AND: {
+            podcastType: mode,
+            applicationId: application.id,
+          },
+        },
+      });
+    }
+
+    await this.prisma.discoveredPodcast.createMany({
+      data: items,
+    });
   }
 
   /**
    * "Not interested" — persist the snapshot as NOT_INTERESTED so discovery
    * never suggests the video again. A USED row is never downgraded.
    */
-  async markNotInterested(userId: string, dto: NotInterestedDto) {
-    await this.applications.findOwnedOrThrow(userId, dto.applicationId);
+  markNotInterested(userId: string, dto: NotInterestedDto) {
+    throw new NotImplementedException(
+      "The markNotInterested isn't implemented yet",
+    );
+    // await this.applications.findOwnedOrThrow(userId, dto.applicationId);
 
-    const where = {
-      applicationId_sourceVideoId: {
-        applicationId: dto.applicationId,
-        sourceVideoId: dto.sourceVideoId,
-      },
-    } as const;
-    const existing = await this.prisma.discoveredPodcast.findUnique({ where });
-    if (existing?.status === DiscoveryStatus.USED) return existing;
+    // const where = {
+    //   applicationId_sourceVideoId: {
+    //     applicationId: dto.applicationId,
+    //     sourceVideoId: dto.sourceVideoId,
+    //   },
+    // } as const;
+    // const existing = await this.prisma.discoveredPodcast.findUnique({ where });
+    // if (existing?.status === DiscoveryStatus.USED) return existing;
 
-    return this.prisma.discoveredPodcast.upsert({
-      where,
-      create: {
-        applicationId: dto.applicationId,
-        sourceVideoId: dto.sourceVideoId,
-        url: dto.url,
-        title: dto.title,
-        channelName: dto.channelName ?? null,
-        thumbnail: dto.thumbnail ?? null,
-        durationSeconds: dto.durationSeconds ?? null,
-        viewCount: dto.viewCount ?? null,
-        likeCount: dto.likeCount ?? null,
-        publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
-        status: DiscoveryStatus.NOT_INTERESTED,
-      },
-      update: {
-        url: dto.url,
-        title: dto.title,
-        channelName: dto.channelName ?? null,
-        thumbnail: dto.thumbnail ?? null,
-        durationSeconds: dto.durationSeconds ?? null,
-        viewCount: dto.viewCount ?? null,
-        likeCount: dto.likeCount ?? null,
-        publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
-        status: DiscoveryStatus.NOT_INTERESTED,
-      },
-    });
+    // return this.prisma.discoveredPodcast.upsert({
+    //   where,
+    //   create: {
+    //     applicationId: dto.applicationId,
+    //     sourceVideoId: dto.sourceVideoId,
+    //     url: dto.url,
+    //     title: dto.title,
+    //     channelName: dto.channelName ?? null,
+    //     thumbnail: dto.thumbnail ?? null,
+    //     durationSeconds: dto.durationSeconds ?? null,
+    //     viewCount: dto.viewCount ?? null,
+    //     likeCount: dto.likeCount ?? null,
+    //     publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
+    //     status: DiscoveryStatus.NOT_INTERESTED,
+    //   },
+    //   update: {
+    //     url: dto.url,
+    //     title: dto.title,
+    //     channelName: dto.channelName ?? null,
+    //     thumbnail: dto.thumbnail ?? null,
+    //     durationSeconds: dto.durationSeconds ?? null,
+    //     viewCount: dto.viewCount ?? null,
+    //     likeCount: dto.likeCount ?? null,
+    //     publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
+    //     status: DiscoveryStatus.NOT_INTERESTED,
+    //   },
+    // });
   }
 
   /**
@@ -271,35 +292,36 @@ export class DiscoveryService {
     applicationId: string,
     snapshot: PodcastSnapshot,
   ): Promise<void> {
-    if (!snapshot.sourceVideoId) return;
-    try {
-      await this.prisma.discoveredPodcast.upsert({
-        where: {
-          applicationId_sourceVideoId: {
-            applicationId,
-            sourceVideoId: snapshot.sourceVideoId,
-          },
-        },
-        create: {
-          applicationId,
-          sourceVideoId: snapshot.sourceVideoId,
-          url: snapshot.url,
-          title: snapshot.title,
-          channelName: snapshot.channelName,
-          thumbnail: snapshot.thumbnail,
-          durationSeconds: snapshot.durationSeconds,
-          viewCount: snapshot.viewCount,
-          likeCount: snapshot.likeCount,
-          publishedAt: snapshot.publishedAt,
-          status: DiscoveryStatus.USED,
-        },
-        update: { status: DiscoveryStatus.USED },
-      });
-    } catch (error) {
-      this.logger.warn(
-        `Failed to mark video ${snapshot.sourceVideoId} as USED: ${error instanceof Error ? error.message : error}`,
-      );
-    }
+    throw new NotImplementedException("The markUsed isn't implemeted yet");
+    // if (!snapshot.sourceVideoId) return;
+    // try {
+    //   await this.prisma.discoveredPodcast.upsert({
+    //     where: {
+    //       applicationId_sourceVideoId: {
+    //         applicationId,
+    //         sourceVideoId: snapshot.sourceVideoId,
+    //       },
+    //     },
+    //     create: {
+    //       applicationId,
+    //       sourceVideoId: snapshot.sourceVideoId,
+    //       url: snapshot.url,
+    //       title: snapshot.title,
+    //       channelName: snapshot.channelName,
+    //       thumbnail: snapshot.thumbnail,
+    //       durationSeconds: snapshot.durationSeconds,
+    //       viewCount: snapshot.viewCount,
+    //       likeCount: snapshot.likeCount,
+    //       publishedAt: snapshot.publishedAt,
+    //       status: DiscoveryStatus.USED,
+    //     },
+    //     update: { status: DiscoveryStatus.USED },
+    //   });
+    // } catch (error) {
+    //   this.logger.warn(
+    //     `Failed to mark video ${snapshot.sourceVideoId} as USED: ${error instanceof Error ? error.message : error}`,
+    //   );
+    // }
   }
 
   // -------------------------------------------------------------------------
@@ -342,10 +364,7 @@ export class DiscoveryService {
   }
 
   /** Full metadata for one candidate; falls back to the flat-search data. */
-  private async hydrate(
-    podcaster: PodcasterEntry,
-    entry: YtDlpSearchEntry,
-  ): Promise<DiscoveredPodcastItem | null> {
+  private async hydrate(podcaster: PodcasterEntry, entry: YtDlpSearchEntry) {
     const url = entry.url ?? `https://www.youtube.com/watch?v=${entry.id}`;
     let info: Record<string, unknown> | null = null;
     try {
@@ -368,8 +387,10 @@ export class DiscoveryService {
     }
 
     return {
-      sourceVideoId: entry.id,
       url,
+      durationSeconds,
+      sourceVideoId: entry.id,
+      podcasterName: podcaster.name,
       title: typeof info?.title === 'string' ? info.title : entry.title,
       thumbnail:
         (info?.thumbnail as string | undefined) ?? entry.thumbnail ?? null,
@@ -377,8 +398,6 @@ export class DiscoveryService {
         (info?.channel as string | undefined) ??
         (info?.uploader as string | undefined) ??
         entry.channel,
-      podcasterName: podcaster.name,
-      durationSeconds,
       viewCount:
         typeof info?.view_count === 'number'
           ? info.view_count
