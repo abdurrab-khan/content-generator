@@ -1,17 +1,17 @@
-import { apiFetch } from '../http';
+import { apiFetch } from "../http";
 import type {
   DiscoveredPodcast,
   DiscoveredPodcastsResult,
   DiscoveryMode,
   PodcasterCatalog,
   Project,
-} from '../types';
+} from "../types";
 
 /** Podcaster catalog for the application language. */
 export async function listDiscoveryPodcasters(
   applicationId: string,
 ): Promise<PodcasterCatalog> {
-  const { data } = await apiFetch<PodcasterCatalog>('/discovery/podcasters', {
+  const { data } = await apiFetch<PodcasterCatalog>("/discovery/podcasters", {
     query: { applicationId },
   });
   return data;
@@ -27,7 +27,7 @@ export async function listDiscoveredPodcasts(input: {
   limit?: number;
 }): Promise<DiscoveredPodcastsResult> {
   const { data } = await apiFetch<DiscoveredPodcastsResult>(
-    '/discovery/podcasts',
+    "/discovery/podcasts",
     {
       query: {
         applicationId: input.applicationId,
@@ -45,8 +45,8 @@ export async function markPodcastNotInterested(input: {
   podcast: DiscoveredPodcast;
 }): Promise<void> {
   const { podcast } = input;
-  await apiFetch('/discovery/podcasts/not-interested', {
-    method: 'POST',
+  await apiFetch("/discovery/podcasts/not-interested", {
+    method: "POST",
     body: {
       applicationId: input.applicationId,
       sourceVideoId: podcast.sourceVideoId,
@@ -68,8 +68,8 @@ export async function useDiscoveredPodcast(input: {
   podcast: DiscoveredPodcast;
 }): Promise<Project> {
   const { podcast } = input;
-  const { data } = await apiFetch<Project>('/discovery/podcasts/use', {
-    method: 'POST',
+  const { data } = await apiFetch<Project>("/discovery/podcasts/use", {
+    method: "POST",
     body: {
       applicationId: input.applicationId,
       url: podcast.url,

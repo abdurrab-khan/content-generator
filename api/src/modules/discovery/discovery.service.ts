@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import {
   PodcastLanguage,
@@ -19,6 +19,7 @@ import {
   podcastersForLanguage,
   type PodcasterEntry,
 } from './podcasters.catalog.js';
+import { RedisService } from '../../database/redis.service.js';
 
 /** Below this a video is a clip/short, not a podcast episode. */
 export const MIN_PODCAST_DURATION_SECONDS = 20 * 60;
@@ -28,6 +29,8 @@ const SEARCH_RESULTS_PER_PODCASTER = 6;
 const CANDIDATES_PER_PODCASTER = 3;
 const PODCASTER_CONCURRENCY = 3;
 const HYDRATE_CONCURRENCY = 4;
+const USED_KEY = 'used-podcast';
+const MARK_NOT_INTERESTED_KEY = 'not-interested-podcast';
 
 /** A podcast suggestion returned to the client. */
 export interface DiscoveredPodcastItem {
@@ -75,6 +78,7 @@ export class DiscoveryService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
     private readonly applications: ApplicationsService,
     private readonly ytdlp: YtDlpService,
   ) {}
@@ -129,7 +133,7 @@ export class DiscoveryService {
     return {
       mode: mode,
       items: podcasts,
-      language: 'ENGLISH',
+      language: application.language,
     };
   }
 
@@ -145,7 +149,6 @@ export class DiscoveryService {
       userId,
       query.applicationId,
     );
-    const excludedIds = await this.loadExcludedVideoIds(application.id);
 
     let podcasters = podcastersForLanguage(application.language);
     if (query.podcasters) {
@@ -179,6 +182,9 @@ export class DiscoveryService {
       },
     );
 
+    // Load all the not-interested, used, already in the project podcasts.
+    const excludedPodcasts = await this.loadExcludedPodcasts(application.id);
+
     // 2. Filter + dedupe: podcast-length, not excluded, first podcaster wins.
     const seen = new Set<string>();
     const candidates: {
@@ -187,9 +193,17 @@ export class DiscoveryService {
     }[] = [];
     for (const { podcaster, entries } of searches) {
       const kept = entries
-        .filter((entry) => this.isPodcastCandidate(entry, excludedIds, seen))
+        .filter(
+          (entry) =>
+            !excludedPodcasts.has(entry.id) &&
+            !seen.has(entry.id) &&
+            (entry.durationSeconds === null ||
+              entry.durationSeconds === undefined ||
+              entry.durationSeconds >= MIN_PODCAST_DURATION_SECONDS),
+        )
         .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
         .slice(0, CANDIDATES_PER_PODCASTER);
+
       for (const entry of kept) {
         seen.add(entry.id);
         candidates.push({ podcaster, entry });
@@ -201,8 +215,7 @@ export class DiscoveryService {
       candidates,
       HYDRATE_CONCURRENCY,
       async ({ podcaster, entry }) => {
-        const item = await this.hydrate(podcaster, entry);
-        return item && !excludedIds.has(item.sourceVideoId) ? item : null;
+        return await this.hydrate(podcaster, entry);
       },
     );
     const items = hydrated
@@ -211,20 +224,17 @@ export class DiscoveryService {
         ...d,
         podcastType: mode,
         applicationId: application.id,
-      }));
-
-    // 4. Rank: both modes rank by views; trending searched date-sorted, so
-    //    its pool is recent episodes — popularity within recency.
-    items.sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0));
+        publishedAt: d.publishedAt ? new Date(d.publishedAt) : null,
+      }))
+      .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
+      .slice(0, query.limit);
 
     // Delete existing podcasts
     if (items.length > 0) {
       await this.prisma.discoveredPodcast.deleteMany({
         where: {
-          AND: {
-            podcastType: mode,
-            applicationId: application.id,
-          },
+          podcastType: mode,
+          applicationId: application.id,
         },
       });
     }
@@ -238,48 +248,23 @@ export class DiscoveryService {
    * "Not interested" — persist the snapshot as NOT_INTERESTED so discovery
    * never suggests the video again. A USED row is never downgraded.
    */
-  markNotInterested(userId: string, dto: NotInterestedDto) {
-    throw new NotImplementedException(
-      "The markNotInterested isn't implemented yet",
-    );
-    // await this.applications.findOwnedOrThrow(userId, dto.applicationId);
+  async markNotInterested(userId: string, dto: NotInterestedDto) {
+    await this.applications.findOwnedOrThrow(userId, dto.applicationId);
 
-    // const where = {
-    //   applicationId_sourceVideoId: {
-    //     applicationId: dto.applicationId,
-    //     sourceVideoId: dto.sourceVideoId,
-    //   },
-    // } as const;
-    // const existing = await this.prisma.discoveredPodcast.findUnique({ where });
-    // if (existing?.status === DiscoveryStatus.USED) return existing;
-
-    // return this.prisma.discoveredPodcast.upsert({
-    //   where,
-    //   create: {
-    //     applicationId: dto.applicationId,
-    //     sourceVideoId: dto.sourceVideoId,
-    //     url: dto.url,
-    //     title: dto.title,
-    //     channelName: dto.channelName ?? null,
-    //     thumbnail: dto.thumbnail ?? null,
-    //     durationSeconds: dto.durationSeconds ?? null,
-    //     viewCount: dto.viewCount ?? null,
-    //     likeCount: dto.likeCount ?? null,
-    //     publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
-    //     status: DiscoveryStatus.NOT_INTERESTED,
-    //   },
-    //   update: {
-    //     url: dto.url,
-    //     title: dto.title,
-    //     channelName: dto.channelName ?? null,
-    //     thumbnail: dto.thumbnail ?? null,
-    //     durationSeconds: dto.durationSeconds ?? null,
-    //     viewCount: dto.viewCount ?? null,
-    //     likeCount: dto.likeCount ?? null,
-    //     publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
-    //     status: DiscoveryStatus.NOT_INTERESTED,
-    //   },
-    // });
+    try {
+      await this.redis.sadd(
+        `${MARK_NOT_INTERESTED_KEY}-${dto.applicationId}`,
+        dto.sourceVideoId,
+      );
+      await this.prisma.discoveredPodcast.deleteMany({
+        where: {
+          sourceVideoId: dto.sourceVideoId,
+          applicationId: dto.applicationId,
+        },
+      });
+    } catch (err) {
+      this.logger.warn(`markNotInterested failed: ${err}`);
+    }
   }
 
   /**
@@ -288,79 +273,48 @@ export class DiscoveryService {
    * stays out of future suggestions even if the project is later deleted.
    * Best-effort — never blocks project creation.
    */
-  async markUsed(
-    applicationId: string,
-    snapshot: PodcastSnapshot,
-  ): Promise<void> {
-    throw new NotImplementedException("The markUsed isn't implemeted yet");
-    // if (!snapshot.sourceVideoId) return;
-    // try {
-    //   await this.prisma.discoveredPodcast.upsert({
-    //     where: {
-    //       applicationId_sourceVideoId: {
-    //         applicationId,
-    //         sourceVideoId: snapshot.sourceVideoId,
-    //       },
-    //     },
-    //     create: {
-    //       applicationId,
-    //       sourceVideoId: snapshot.sourceVideoId,
-    //       url: snapshot.url,
-    //       title: snapshot.title,
-    //       channelName: snapshot.channelName,
-    //       thumbnail: snapshot.thumbnail,
-    //       durationSeconds: snapshot.durationSeconds,
-    //       viewCount: snapshot.viewCount,
-    //       likeCount: snapshot.likeCount,
-    //       publishedAt: snapshot.publishedAt,
-    //       status: DiscoveryStatus.USED,
-    //     },
-    //     update: { status: DiscoveryStatus.USED },
-    //   });
-    // } catch (error) {
-    //   this.logger.warn(
-    //     `Failed to mark video ${snapshot.sourceVideoId} as USED: ${error instanceof Error ? error.message : error}`,
-    //   );
-    // }
+  async markUsed(applicationId: string, snapshot: PodcastSnapshot) {
+    if (!snapshot.sourceVideoId) return;
+    try {
+      await this.redis.sadd(
+        `${USED_KEY}-${applicationId}`,
+        snapshot.sourceVideoId,
+      );
+      await this.prisma.discoveredPodcast.deleteMany({
+        where: {
+          applicationId: applicationId,
+          sourceVideoId: snapshot.sourceVideoId,
+        },
+      });
+    } catch (err) {
+      this.logger.warn(`markUsed failed: ${err}`);
+    }
   }
 
   // -------------------------------------------------------------------------
 
   /** Videos to never suggest: USED/NOT_INTERESTED rows + existing projects. */
-  private async loadExcludedVideoIds(
+  private async loadExcludedPodcasts(
     applicationId: string,
   ): Promise<Set<string>> {
-    const [discoveries, projects] = await Promise.all([
-      this.prisma.discoveredPodcast.findMany({
-        where: { applicationId },
-        select: { sourceVideoId: true },
-      }),
-      this.prisma.project.findMany({
-        where: { applicationId, sourceVideoId: { not: null } },
-        select: { sourceVideoId: true },
-      }),
-    ]);
-    const excluded = new Set(discoveries.map((row) => row.sourceVideoId));
+    const projects = await this.prisma.project.findMany({
+      where: { applicationId, sourceVideoId: { not: null } },
+      select: { sourceVideoId: true },
+    });
+
+    const usedPodcasts = await this.redis.smembers(
+      `${USED_KEY}-${applicationId}`,
+    );
+    const notInterestedPodcasts = await this.redis.smembers(
+      `${MARK_NOT_INTERESTED_KEY}-${applicationId}`,
+    );
+
+    const excluded = new Set([...usedPodcasts, ...notInterestedPodcasts]);
     for (const project of projects) {
       if (project.sourceVideoId) excluded.add(project.sourceVideoId);
     }
-    return excluded;
-  }
 
-  private isPodcastCandidate(
-    entry: YtDlpSearchEntry,
-    excludedIds: Set<string>,
-    seen: Set<string>,
-  ): boolean {
-    if (excludedIds.has(entry.id) || seen.has(entry.id)) return false;
-    // Unknown duration passes — hydration decides; known shorts are dropped.
-    if (
-      entry.durationSeconds !== null &&
-      entry.durationSeconds < MIN_PODCAST_DURATION_SECONDS
-    ) {
-      return false;
-    }
-    return true;
+    return excluded;
   }
 
   /** Full metadata for one candidate; falls back to the flat-search data. */

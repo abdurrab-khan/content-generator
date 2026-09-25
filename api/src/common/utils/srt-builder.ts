@@ -20,8 +20,7 @@ export function buildClipSrt(
   return overlapping
     .map((cue, index) => {
       const shiftedStart = Math.max(0, cue.startSeconds - startSeconds);
-      const shiftedEnd =
-        Math.min(endSeconds, cue.endSeconds) - startSeconds;
+      const shiftedEnd = Math.min(endSeconds, cue.endSeconds) - startSeconds;
       return (
         `${index + 1}\n` +
         `${secondsToSrtTimestamp(shiftedStart)} --> ` +

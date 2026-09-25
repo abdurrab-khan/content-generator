@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { z } from 'zod';
@@ -50,6 +58,7 @@ export class DiscoveryController {
   }
 
   @Post('podcasts/refetch')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Refetch the podcast again based on the query',
     description:
@@ -63,7 +72,7 @@ export class DiscoveryController {
     @Query(new ZodValidationPipe(listPodcastsQuerySchema))
     query: ListPodcastsQuery,
   ) {
-    return this.discovery.findPodcasts(session.user.id, query);
+    return this.discovery.refetchPodcasts(session.user.id, query);
   }
 
   @Post('podcasts/not-interested')
