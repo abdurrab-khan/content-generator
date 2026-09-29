@@ -32,7 +32,7 @@ export async function listDiscoveredPodcasts(input: {
       query: {
         applicationId: input.applicationId,
         mode: input.mode,
-        limit: input.limit ?? 12,
+        limit: input.limit ?? 20,
       },
     },
   );

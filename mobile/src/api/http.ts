@@ -1,4 +1,4 @@
-import { API_URL, APP_ORIGIN } from '../config/env';
+import { API_URL, APP_ORIGIN } from "../config/env";
 
 /**
  * Transport layer — a thin fetch wrapper that knows about:
@@ -16,7 +16,7 @@ export class ApiError extends Error {
 
   constructor(status: number, message: string, path: string) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
     this.path = path;
   }
@@ -32,7 +32,7 @@ export function getAuthToken(): string | null {
   return authToken;
 }
 
-type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 interface RequestOptions {
   method?: HttpMethod;
@@ -46,9 +46,9 @@ export interface RawResponse<T> {
   status: number;
 }
 
-function buildUrl(path: string, query?: RequestOptions['query']): string {
+function buildUrl(path: string, query?: RequestOptions["query"]): string {
   const base = `${API_URL}${path}`;
-  console.log("BASE URL IS: ", base)
+  console.log("BASE URL IS: ", base);
   if (!query) return base;
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
@@ -63,17 +63,20 @@ async function parseError(response: Response, path: string): Promise<ApiError> {
   try {
     const body: unknown = await response.json();
     const raw = (body as { message?: unknown } | null)?.message;
-    if (Array.isArray(raw)) message = raw.filter(Boolean).join(', ');
-    else if (typeof raw === 'string' && raw.length > 0) message = raw;
+    if (Array.isArray(raw)) message = raw.filter(Boolean).join(", ");
+    else if (typeof raw === "string" && raw.length > 0) message = raw;
   } catch {
     // non-JSON error body — keep default message
   }
   return new ApiError(response.status, message, path);
 }
 
-async function rawRequest<T>(path: string, options: RequestOptions = {}): Promise<RawResponse<T>> {
+async function rawRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<RawResponse<T>> {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     // RN's cookie jar re-sends the better-auth session cookie once set, and
     // the server's CSRF guard then requires a trusted Origin on auth POSTs.
     Origin: APP_ORIGIN,
@@ -83,23 +86,26 @@ async function rawRequest<T>(path: string, options: RequestOptions = {}): Promis
   let response: Response;
   try {
     response = await fetch(buildUrl(path, options.query), {
-      method: options.method ?? 'GET',
+      method: options.method ?? "GET",
       headers,
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      body:
+        options.body !== undefined ? JSON.stringify(options.body) : undefined,
     });
-    console.log("API STATUS: ", response.status)
-    console.log("API OK: ", response.ok)
   } catch {
     throw new ApiError(
       0,
-      'Cannot reach the server — is the API running and the device on the same network?',
+      "Cannot reach the server — is the API running and the device on the same network?",
       path,
     );
   }
 
   if (!response.ok) throw await parseError(response, path);
   if (response.status === 204) {
-    return { body: undefined as T, headers: response.headers, status: response.status };
+    return {
+      body: undefined as T,
+      headers: response.headers,
+      status: response.status,
+    };
   }
   const body = (await response.json()) as T;
   return { body, headers: response.headers, status: response.status };
@@ -114,8 +120,10 @@ export async function apiFetch<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<{ data: T; meta: Record<string, unknown> | null }> {
-  const { body } = await rawRequest<{ data: T; meta?: Record<string, unknown> } | T>(path, options);
-  if (body && typeof body === 'object' && 'data' in body) {
+  const { body } = await rawRequest<
+    { data: T; meta?: Record<string, unknown> } | T
+  >(path, options);
+  if (body && typeof body === "object" && "data" in body) {
     const envelope = body as { data: T; meta?: Record<string, unknown> };
     return { data: envelope.data, meta: envelope.meta ?? null };
   }

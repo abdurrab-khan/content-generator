@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ApiError } from "../../api/http";
+import { ApiError, apiFetch } from "../../api/http";
 import type { Application, DiscoveryMode, Project } from "../../api/types";
 import {
   useDiscoveredPodcasts,
@@ -14,6 +14,8 @@ import { AppText } from "../ui/app-text";
 import { SegmentedTabs } from "../ui/segmented-tabs";
 import { Skeleton } from "../ui/skeleton";
 import { PodcastCard } from "./podcast-card";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../queries/query-keys";
 
 /**
  * Home-page discovery rail — trending / all-time popular podcast episodes
@@ -36,13 +38,40 @@ export function DiscoverPodcastsSection({
   onProjectCreated,
 }: DiscoverPodcastsSectionProps) {
   const [mode, setMode] = useState<DiscoveryMode>("popular");
+  const [isRefetching, setIsRefetching] = useState<boolean>(false);
   const [busyVideoId, setBusyVideoId] = useState<string | null>(null);
 
   const usePodcast = useUsePodcast();
+  const queryClient = useQueryClient();
   const notInterested = useNotInterestedPodcast();
   const podcasts = useDiscoveredPodcasts(application.id, mode);
 
   const items = podcasts.data?.items ?? [];
+
+  const refetchPodcasts = async () => {
+    setIsRefetching(true);
+    try {
+      await apiFetch(`/discovery/podcasts/refetch`, {
+        method: "POST",
+        body: {
+          applicationId: application.id,
+          mode: mode,
+          limit: 20,
+        },
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.discoveryPodcasts(application.id, mode),
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof ApiError
+          ? error.message
+          : "Failed to refetch new podcasts",
+      );
+    } finally {
+      setIsRefetching(false);
+    }
+  };
 
   const makeClips = async (podcast: (typeof items)[number]) => {
     setBusyVideoId(podcast.sourceVideoId);
@@ -99,10 +128,7 @@ export function DiscoverPodcastsSection({
         />
       )}
       refreshControl={
-        <RefreshControl
-          refreshing={podcasts.isRefetching}
-          onRefresh={() => podcasts.refetch()}
-        />
+        <RefreshControl refreshing={isRefetching} onRefresh={refetchPodcasts} />
       }
       ListHeaderComponent={
         <View style={{ gap: 12, paddingTop: 14 }}>
