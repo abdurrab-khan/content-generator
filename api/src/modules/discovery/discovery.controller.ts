@@ -72,7 +72,8 @@ export class DiscoveryController {
     @Query(new ZodValidationPipe(listPodcastsQuerySchema))
     query: ListPodcastsQuery,
   ) {
-    return this.discovery.refetchPodcasts(session.user.id, query);
+    void this.discovery.refetchPodcasts(session.user.id, query);
+    return;
   }
 
   @Post('podcasts/not-interested')

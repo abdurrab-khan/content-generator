@@ -48,7 +48,6 @@ export interface RawResponse<T> {
 
 function buildUrl(path: string, query?: RequestOptions["query"]): string {
   const base = `${API_URL}${path}`;
-  console.log("BASE URL IS: ", base);
   if (!query) return base;
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {

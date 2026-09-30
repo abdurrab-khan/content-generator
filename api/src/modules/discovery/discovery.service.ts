@@ -256,16 +256,10 @@ export class DiscoveryService {
         `${MARK_NOT_INTERESTED_KEY}-${dto.applicationId}`,
         dto.sourceVideoId,
       );
-      await this.prisma.discoveredPodcast.delete({
-        // where: {
-        //   sourceVideoId: dto.sourceVideoId,
-        //   applicationId: dto.applicationId,
-        // }
+      await this.prisma.discoveredPodcast.deleteMany({
         where: {
-          applicationId_sourceVideoId: {
-            sourceVideoId: dto.sourceVideoId,
-            applicationId: dto.applicationId,
-          },
+          sourceVideoId: dto.sourceVideoId,
+          applicationId: dto.applicationId,
         },
       });
     } catch (err) {

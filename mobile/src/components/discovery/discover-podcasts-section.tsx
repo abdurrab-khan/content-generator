@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  Text,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ApiError, apiFetch } from "../../api/http";
 import type { Application, DiscoveryMode, Project } from "../../api/types";
@@ -14,15 +21,13 @@ import { AppText } from "../ui/app-text";
 import { SegmentedTabs } from "../ui/segmented-tabs";
 import { Skeleton } from "../ui/skeleton";
 import { PodcastCard } from "./podcast-card";
-import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "../../queries/query-keys";
+import { IconButton } from "../ui/icon-button";
 
 /**
  * Home-page discovery rail — trending / all-time popular podcast episodes
  * for the selected application's language. Videos already used or dismissed
  * never reappear (server-side cache).
  */
-
 export interface DiscoverPodcastsSectionProps {
   application: Application;
   onProjectCreated: (project: Project) => void;
@@ -33,6 +38,15 @@ const MODE_TABS: { key: DiscoveryMode; label: string }[] = [
   { key: "trending", label: "Trending" },
 ];
 
+// Just refetch the current podcast, does not find new podcasts
+const RefetchPodcastsBtn = ({ refetch }: { refetch: () => void }) => {
+  return (
+    <View style={{ alignItems: "flex-end" }}>
+      <IconButton icon="repeat" onPress={refetch} />
+    </View>
+  );
+};
+
 export function DiscoverPodcastsSection({
   application,
   onProjectCreated,
@@ -42,25 +56,22 @@ export function DiscoverPodcastsSection({
   const [busyVideoId, setBusyVideoId] = useState<string | null>(null);
 
   const usePodcast = useUsePodcast();
-  const queryClient = useQueryClient();
   const notInterested = useNotInterestedPodcast();
   const podcasts = useDiscoveredPodcasts(application.id, mode);
 
   const items = podcasts.data?.items ?? [];
 
+  // refetch for new podcasts, mean delete current one and find one podcasts
   const refetchPodcasts = async () => {
     setIsRefetching(true);
     try {
-      await apiFetch(`/discovery/podcasts/refetch`, {
+      await apiFetch("/discovery/podcasts/refetch", {
         method: "POST",
-        body: {
+        query: {
           applicationId: application.id,
           mode: mode,
           limit: 20,
         },
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.discoveryPodcasts(application.id, mode),
       });
     } catch (error) {
       toast.error(
@@ -70,6 +81,24 @@ export function DiscoverPodcastsSection({
       );
     } finally {
       setIsRefetching(false);
+    }
+  };
+
+  const alertToRefetch = () => {
+    if (items.length > 0) {
+      Alert.alert(
+        "Do you really want to refetch",
+        `Refetch will remove the current ${mode} podcasts and find new ones.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Refetch", style: "destructive", onPress: refetchPodcasts },
+        ],
+        {
+          userInterfaceStyle: "dark",
+        },
+      );
+    } else {
+      refetchPodcasts();
     }
   };
 
@@ -115,7 +144,6 @@ export function DiscoverPodcastsSection({
       data={items}
       keyExtractor={(item) => item.sourceVideoId}
       contentContainerStyle={{
-        gap: 12,
         paddingInline: 20,
         paddingBottom: 20,
       }}
@@ -128,7 +156,10 @@ export function DiscoverPodcastsSection({
         />
       )}
       refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetchPodcasts} />
+        <RefreshControl
+          onRefresh={alertToRefetch}
+          refreshing={isRefetching || podcasts.isRefetching}
+        />
       }
       ListHeaderComponent={
         <View style={{ gap: 12, paddingTop: 14 }}>
@@ -158,56 +189,65 @@ export function DiscoverPodcastsSection({
             </View>
           </View>
           <SegmentedTabs tabs={MODE_TABS} active={mode} onChange={setMode} />
+          <RefetchPodcastsBtn refetch={podcasts.refetch} />
         </View>
       }
       ListEmptyComponent={
-        podcasts.isLoading ? (
-          <View style={{ gap: 12 }}>
-            <Skeleton height={236} borderRadius={radii.xl} />
-            <Skeleton height={236} borderRadius={radii.xl} />
-          </View>
-        ) : podcasts.isError ? (
-          <React.Fragment>
-            <View
+        <>
+          {podcasts.isLoading && (
+            <View style={{ gap: 12 }}>
+              <Skeleton height={236} borderRadius={radii.xl} />
+              <Skeleton height={236} borderRadius={radii.xl} />
+            </View>
+          )}
+          {podcasts.isError && (
+            <React.Fragment>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                  backgroundColor: colors.card,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: radii.lg,
+                  padding: 14,
+                }}
+              >
+                <Ionicons
+                  name="cloud-offline-outline"
+                  size={18}
+                  color={colors.textDim}
+                />
+                <AppText variant="muted" style={{ flex: 1, fontSize: 13 }}>
+                  {podcasts.error instanceof ApiError
+                    ? podcasts.error.message
+                    : "Could not load suggestions — searching YouTube takes a moment."}
+                </AppText>
+                <Pressable onPress={() => void podcasts.refetch()} hitSlop={8}>
+                  <AppText
+                    variant="label"
+                    style={{ color: colors.primaryBright }}
+                  >
+                    Retry
+                  </AppText>
+                </Pressable>
+              </View>
+            </React.Fragment>
+          )}
+          {!podcasts.isLoading && items.length === 0 && (
+            <AppText
+              variant="muted"
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 10,
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: radii.lg,
-                padding: 14,
+                fontSize: 13,
+                color: "white",
               }}
             >
-              <Ionicons
-                name="cloud-offline-outline"
-                size={18}
-                color={colors.textDim}
-              />
-              <AppText variant="muted" style={{ flex: 1, fontSize: 13 }}>
-                {podcasts.error instanceof ApiError
-                  ? podcasts.error.message
-                  : "Could not load suggestions — searching YouTube takes a moment."}
-              </AppText>
-              <Pressable onPress={() => void podcasts.refetch()} hitSlop={8}>
-                <AppText
-                  variant="label"
-                  style={{ color: colors.primaryBright }}
-                >
-                  Retry
-                </AppText>
-              </Pressable>
-            </View>
-            ) : items.length === 0 ? (
-            <AppText variant="muted" style={{ fontSize: 13 }}>
               No fresh episodes right now — everything found so far is already
               in your projects or dismissed. Try the other tab.
             </AppText>
-          </React.Fragment>
-        ) : (
-          <></>
-        )
+          )}
+        </>
       }
     />
   );

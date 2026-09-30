@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import { getProject } from '../api/endpoints/projects';
-import { isPipelineActive, isRenderInFlight } from '../lib/status';
-import { queryKeys } from './query-keys';
+import { useQuery } from "@tanstack/react-query";
+import { getProject } from "../api/endpoints/projects";
+import { isPipelineActive, isRenderInFlight } from "../lib/status";
+import { queryKeys } from "./query-keys";
 
 /**
  * Project detail (includes clips with renders, videos, raw videos). Polls
@@ -15,14 +15,14 @@ export function useProject(id: string) {
     refetchInterval: (query) => {
       const project = query.state.data;
       if (!project) return false;
-      if (isPipelineActive(project.pipelineState)) return 4000;
+      if (isPipelineActive(project.pipelineState)) return 10000;
       const clipsInFlight = project.clips.some(
         (clip) =>
-          clip.state === 'PENDING' ||
-          clip.state === 'CUTTING' ||
+          clip.state === "PENDING" ||
+          clip.state === "CUTTING" ||
           clip.renders.some((render) => isRenderInFlight(render.state)),
       );
-      return clipsInFlight ? 4000 : false;
+      return clipsInFlight ? 10000 : false;
     },
   });
 }

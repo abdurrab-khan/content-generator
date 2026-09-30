@@ -47,16 +47,6 @@ services:
       timeout: 3s
       retries: 10
 
-  ngrok:
-    image: ngrok/ngrok:3.39.11-alpine
-    restart: unless-stopped
-    command:
-      - "http"
-      - "api:3000"
-      - "--url=aware-wanted-puma.ngrok-free.app"
-    environment:
-      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:?"Error -- Ngrok authtoken is required"}
-
 volumes:
   pgdata:
   redisdata:
