@@ -1,14 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  ActivityIndicator,
-  Pressable,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useMediaDownload } from "../../lib/use-media-download";
 import { useCaptionsDownload } from "../../lib/use-captions-download";
 import { colors, fonts, radii } from "../../theme";
 import { AppText } from "./app-text";
+import { useState } from "react";
+import { ClipRender } from "../../api/types";
+import { ColorGradingSheet } from "../clips/color-grading-sheet";
 
 /**
  * Play + download action row shared by clip / video / raw-video cards.
@@ -16,6 +14,7 @@ import { AppText } from "./app-text";
  */
 
 export interface MediaActionsProps {
+  id: string | null;
   /** Authenticated stream URL, or null when the file isn't produced yet. */
   streamUrl: string | null;
   filename: string;
@@ -30,23 +29,35 @@ export interface MediaActionsProps {
   onSave?: () => void;
   /** Authenticated .srt captions URL; shows a captions button when set. */
   captionsUrl?: string | null;
+  renders: ClipRender[] | undefined;
 }
 
 export function MediaActions({
+  id,
   streamUrl,
   filename,
   onPlay,
   pendingLabel,
   onSave,
   captionsUrl,
+  renders,
 }: MediaActionsProps) {
+  const [sheetVisible, setSheetVisible] = useState(false);
   const { progress, downloading, start } = useMediaDownload();
   const { downloading: captionsDownloading, start: startCaptions } =
     useCaptionsDownload();
   const ready = streamUrl !== null;
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+    <View
+      style={{
+        flex: 1,
+        gap: 6,
+        flexWrap: "wrap",
+        flexDirection: "row",
+        alignItems: "center",
+      }}
+    >
       <TouchableOpacity
         activeOpacity={0.7}
         accessibilityRole="button"
@@ -134,11 +145,7 @@ export function MediaActions({
             <ActivityIndicator size="small" color={colors.primaryBright} />
           ) : (
             <>
-              <Ionicons
-                name="text-outline"
-                size={15}
-                color={colors.text}
-              />
+              <Ionicons name="text-outline" size={15} color={colors.text} />
               <AppText variant="label" style={{ color: colors.text }}>
                 SRT
               </AppText>
@@ -152,6 +159,39 @@ export function MediaActions({
           {pendingLabel}
         </AppText>
       ) : null}
+
+      <TouchableOpacity
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Color grade this clip"
+        disabled={!ready}
+        onPress={() => setSheetVisible(true)}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+          height: 36,
+          paddingHorizontal: 14,
+          borderRadius: radii.full,
+          backgroundColor: colors.cardAlt,
+          borderWidth: 1,
+          borderColor: colors.borderStrong,
+          opacity: ready ? 1 : 0.6,
+        }}
+      >
+        <Ionicons name="color-palette-outline" size={15} color={colors.text} />
+        <AppText variant="label" style={{ color: colors.text }}>
+          Grade
+        </AppText>
+      </TouchableOpacity>
+      {id && (
+        <ColorGradingSheet
+          visible={sheetVisible}
+          clipId={id}
+          renders={renders ?? []}
+          onClose={() => setSheetVisible(false)}
+        />
+      )}
     </View>
   );
 }

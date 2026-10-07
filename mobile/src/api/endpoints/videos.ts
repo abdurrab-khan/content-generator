@@ -1,9 +1,9 @@
-import { API_URL } from '../../config/env';
-import { apiFetch } from '../http';
-import type { Video } from '../types';
+import { API_URL } from "../../config/env";
+import { apiFetch } from "../http";
+import type { Video } from "../types";
 
 export async function listVideos(): Promise<Video[]> {
-  const { data } = await apiFetch<Video[]>('/videos');
+  const { data } = await apiFetch<Video[]>("/videos");
   return data;
 }
 
@@ -22,5 +22,5 @@ export function videoStreamUrl(id: string): string {
  * it was cut from shares the same file, the clip is deleted too (API-side).
  */
 export async function deleteVideo(id: string): Promise<void> {
-  await apiFetch<void>(`/videos/${id}`, { method: 'DELETE' });
+  await apiFetch<void>(`/videos/${id}`, { method: "DELETE" });
 }

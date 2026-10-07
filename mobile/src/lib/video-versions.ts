@@ -1,8 +1,8 @@
-import { clipStreamUrl } from '../api/endpoints/clips';
-import { renderStreamUrl } from '../api/endpoints/color-grading';
-import { videoStreamUrl } from '../api/endpoints/videos';
-import type { Clip, ClipRender, Video } from '../api/types';
-import type { MediaKind } from '../components/player/video-player-screen';
+import { clipStreamUrl } from "../api/endpoints/clips";
+import { renderStreamUrl } from "../api/endpoints/color-grading";
+import { videoStreamUrl } from "../api/endpoints/videos";
+import type { Clip, ClipRender, RawClip, Video } from "../api/types";
+import type { MediaKind } from "../components/player/video-player-screen";
 
 /**
  * A playable/downloadable "version" of a ready video: the original cut plus
@@ -15,35 +15,35 @@ export interface VideoVersion {
   /** Badge/row label — 'Original' or the preset name. */
   label: string;
   isOriginal: boolean;
-  streamUrl: string;
+  streamUrl: string | null;
   /** Base filename for gallery downloads (extension added downstream). */
   filename: string;
   /** Player route params for previewing this exact version. */
-  playerId: string;
+  playerId: string | null;
   playerKind: MediaKind;
   render: ClipRender | null;
 }
 
 export function buildVideoVersions(
-  video: Video,
+  clip: RawClip,
   renders: ClipRender[],
   title: string,
 ): VideoVersion[] {
   const versions: VideoVersion[] = [
     {
-      key: 'original',
-      label: 'Original',
-      isOriginal: true,
-      streamUrl: videoStreamUrl(video.id),
-      filename: title,
-      playerId: video.id,
-      playerKind: 'video',
       render: null,
+      key: "original",
+      filename: title,
+      label: "Original",
+      isOriginal: true,
+      playerId: clip.videoId ? clip.videoId : null,
+      streamUrl: clip.videoId ? videoStreamUrl(clip.videoId) : null,
+      playerKind: "video",
     },
   ];
   for (const render of renders) {
-    if (render.state !== 'READY') continue;
-    const presetName = render.colorGradingPreset?.name ?? 'Graded';
+    if (render.state !== "READY") continue;
+    const presetName = render.colorGradingPreset?.name ?? "Graded";
     versions.push({
       key: render.id,
       label: presetName,
@@ -51,7 +51,7 @@ export function buildVideoVersions(
       streamUrl: renderStreamUrl(render.id),
       filename: `${title} - ${presetName}`,
       playerId: render.id,
-      playerKind: 'render',
+      playerKind: "render",
       render,
     });
   }
@@ -69,19 +69,19 @@ export function buildClipVersions(
 ): VideoVersion[] {
   const versions: VideoVersion[] = [
     {
-      key: 'original',
-      label: 'Original',
+      key: "original",
+      label: "Original",
       isOriginal: true,
       streamUrl: clipStreamUrl(clip.id),
       filename: title,
       playerId: clip.id,
-      playerKind: 'clip',
+      playerKind: "clip",
       render: null,
     },
   ];
   for (const render of renders) {
-    if (render.state !== 'READY') continue;
-    const presetName = render.colorGradingPreset?.name ?? 'Graded';
+    if (render.state !== "READY") continue;
+    const presetName = render.colorGradingPreset?.name ?? "Graded";
     versions.push({
       key: render.id,
       label: presetName,
@@ -89,7 +89,7 @@ export function buildClipVersions(
       streamUrl: renderStreamUrl(render.id),
       filename: `${title} - ${presetName}`,
       playerId: render.id,
-      playerKind: 'render',
+      playerKind: "render",
       render,
     });
   }

@@ -1,4 +1,4 @@
-import { Pressable, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,6 +10,7 @@ import { AppText } from "../ui/app-text";
 import { CopyableText } from "../ui/copyable-text";
 import { IconButton } from "../ui/icon-button";
 import { PipelineBadge } from "./pipeline-badge";
+import { openOnYouTube } from "../../lib/youtube";
 
 /** Detail header — full-bleed thumbnail with scrim, back control, status. */
 
@@ -77,13 +78,11 @@ export function ProjectHero({ project, onBack }: ProjectHeroProps) {
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityHint="Copies the source link"
-            onPress={() =>
-              void copyToClipboard(project.sourceUrl, "Source link copied")
-            }
+            onPress={() => void openOnYouTube(project.sourceUrl)}
             style={{
+              gap: 6,
               flexDirection: "row",
               alignItems: "center",
-              gap: 6,
               backgroundColor: colors.card,
               borderWidth: 1,
               borderColor: colors.border,
@@ -94,9 +93,8 @@ export function ProjectHero({ project, onBack }: ProjectHeroProps) {
           >
             <Ionicons name="logo-youtube" size={12} color="#FF4D4D" />
             <AppText variant="caption" style={{ color: colors.textMuted }}>
-              Source link
+              Open on Youtube
             </AppText>
-            <Ionicons name="copy-outline" size={11} color={colors.textDim} />
           </TouchableOpacity>
           <AppText variant="caption">
             {formatRelativeDate(project.createdAt)}

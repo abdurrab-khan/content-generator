@@ -1,12 +1,22 @@
-import { Alert, FlatList, TouchableOpacity, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
+import {
+  Alert,
+  FlatList,
+  TouchableOpacity,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useMemo, useState } from "react";
 import { clipCaptionsUrl } from "../../api/endpoints/clips";
-import type { ClipRender, Video } from "../../api/types";
+import type { ClipRender, ClipState, RawClip } from "../../api/types";
 import { formatDuration, formatRelativeDate } from "../../lib/format";
-import { buildVideoVersions, type VideoVersion } from "../../lib/video-versions";
+import {
+  buildVideoVersions,
+  type VideoVersion,
+} from "../../lib/video-versions";
 import { colors, gradients, radii } from "../../theme";
 import { AppText } from "../ui/app-text";
 import { Badge } from "../ui/badge";
@@ -16,6 +26,7 @@ import { MediaActions } from "../ui/media-actions";
 import { TagChip } from "../ui/tag-chip";
 import { ViralityBadge } from "../ui/virality-badge";
 import { VersionDownloadSheet } from "./version-download-sheet";
+import { clipStateMeta } from "../../lib/status";
 
 /**
  * Final ready-video card — version slider (original + READY graded variants)
@@ -24,7 +35,7 @@ import { VersionDownloadSheet } from "./version-download-sheet";
  */
 
 export interface VideoCardProps {
-  video: Video;
+  clip: RawClip;
   /** Project thumbnail used as poster art (API has no per-video thumbs). */
   poster: string | null;
   /** Variants of the clip this video was cut from — READY ones join the slider. */
@@ -38,18 +49,18 @@ export interface VideoCardProps {
 }
 
 export function VideoCard({
-  video,
+  clip,
   poster,
   renders = [],
   onPlay,
   onDelete,
   viralityScore,
 }: VideoCardProps) {
-  const title = video.title ?? "Untitled video";
-  const playable = video.storagePath !== null;
+  const title = clip.title ?? "Untitled video";
+  const playable = clip.storagePath !== null;
   const versions = useMemo(
-    () => buildVideoVersions(video, renders, title),
-    [video, renders, title],
+    () => buildVideoVersions(clip, renders, title),
+    [clip, renders, title],
   );
   const hasVersions = versions.length > 1;
 
@@ -60,9 +71,7 @@ export function VideoCard({
 
   const onScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (pageWidth <= 0) return;
-    setActiveIndex(
-      Math.round(event.nativeEvent.contentOffset.x / pageWidth),
-    );
+    setActiveIndex(Math.round(event.nativeEvent.contentOffset.x / pageWidth));
   };
 
   const confirmDelete = () => {
@@ -78,7 +87,7 @@ export function VideoCard({
   };
 
   return (
-    <Card padded={false}>
+    <Card padded={false} style={{ opacity: clip.state !== "READY" ? 0.3 : 1 }}>
       <View onLayout={(event) => setPageWidth(event.nativeEvent.layout.width)}>
         <FlatList
           data={versions}
@@ -89,9 +98,10 @@ export function VideoCard({
           onMomentumScrollEnd={onScrollEnd}
           renderItem={({ item }) => (
             <VersionPoster
+              state={clip.state}
               version={item}
               poster={poster}
-              duration={video.duration}
+              duration={clip.duration}
               viralityScore={viralityScore ?? null}
               width={pageWidth}
               disabled={!playable}
@@ -136,45 +146,67 @@ export function VideoCard({
           numberOfLines={2}
         />
 
-        {video.description ? (
+        {clip.description ? (
           <CopyableText
-            value={video.description}
+            value={clip.description}
             copyLabel="Description copied"
             variant="muted"
             numberOfLines={2}
           />
         ) : null}
 
-        {video.tags.length > 0 ? (
+        {clip.tags.length > 0 ? (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            {video.tags.map((tag) => (
+            {clip.tags.map((tag) => (
               <TagChip key={tag} tag={tag} />
             ))}
           </View>
         ) : null}
 
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <View
+          style={{
+            gap: 6,
+            marginTop: 6,
+            flexWrap: "wrap",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <MediaActions
+            id={clip.id}
+            renders={clip.renders}
             streamUrl={playable ? activeVersion.streamUrl : null}
             filename={activeVersion.filename}
             onPlay={() => onPlay(activeVersion)}
             onSave={hasVersions ? () => setChooserVisible(true) : undefined}
-            captionsUrl={video.clipId ? clipCaptionsUrl(video.clipId) : null}
+            captionsUrl={clip.id ? clipCaptionsUrl(clip.id) : null}
           />
-          <View style={{ flex: 1 }} />
-          <AppText variant="caption">
-            {formatRelativeDate(video.createdAt)}
-          </AppText>
-          {onDelete ? (
-            <TouchableOpacity
-              activeOpacity={0.6}
-              onPress={confirmDelete}
-              hitSlop={10}
-              accessibilityLabel="Delete video"
-            >
-              <Ionicons name="trash-outline" size={17} color={colors.danger} />
-            </TouchableOpacity>
-          ) : null}
+          <View
+            style={{
+              gap: 6,
+              flex: 0.3,
+              flexDirection: "row",
+            }}
+          >
+            <AppText variant="caption">
+              {formatRelativeDate(clip.createdAt)}
+            </AppText>
+            {onDelete ? (
+              <TouchableOpacity
+                activeOpacity={0.6}
+                onPress={confirmDelete}
+                hitSlop={10}
+                accessibilityLabel="Delete video"
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={17}
+                  color={colors.danger}
+                />
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
       </View>
 
@@ -190,6 +222,7 @@ export function VideoCard({
 /** One slider page — poster art, play overlay, duration, and (graded
  *  versions only) a preset badge. The original gets no badge. */
 function VersionPoster({
+  state,
   version,
   poster,
   duration,
@@ -198,6 +231,7 @@ function VersionPoster({
   disabled,
   onPlay,
 }: {
+  state: ClipState | undefined;
   version: VideoVersion;
   poster: string | null;
   duration: number | null;
@@ -206,6 +240,8 @@ function VersionPoster({
   disabled: boolean;
   onPlay: () => void;
 }) {
+  const stateMeta = state ? clipStateMeta[state] : "";
+
   return (
     <TouchableOpacity
       activeOpacity={0.9}
@@ -250,11 +286,11 @@ function VersionPoster({
             <ViralityBadge score={viralityScore} onImage />
           </View>
         ) : null}
-        {!version.isOriginal ? (
+        {stateMeta && (
           <View style={{ position: "absolute", top: 10, right: 10 }}>
-            <Badge label={version.label} color={colors.primaryBright} />
+            <Badge label={stateMeta.label} color={stateMeta.color} />
           </View>
-        ) : null}
+        )}
         <View
           style={{
             position: "absolute",
@@ -305,4 +341,3 @@ function VersionPoster({
     </TouchableOpacity>
   );
 }
-

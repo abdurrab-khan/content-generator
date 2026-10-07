@@ -4,31 +4,32 @@
  * `api/prisma/schema.prisma`.
  */
 
-export type RecordStatus = 'ACTIVE' | 'BIN' | 'DELETED' | 'ERROR';
+export type RecordStatus = "ACTIVE" | "BIN" | "DELETED" | "ERROR";
 
 export type PipelineState =
-  | 'CREATED'
-  | 'DETAILS_FETCHED'
-  | 'FETCHING_TRANSCRIPT'
-  | 'TRANSCRIPT_READY'
-  | 'ANALYZING'
-  | 'CLIPS_READY'
-  | 'DOWNLOADING_VIDEO'
-  | 'VIDEO_READY'
-  | 'CUTTING'
-  | 'COMPLETED'
-  | 'FAILED';
+  | "CREATED"
+  | "DETAILS_FETCHED"
+  | "FETCHING_TRANSCRIPT"
+  | "TRANSCRIPT_READY"
+  | "ANALYZING"
+  | "CLIPS_READY"
+  | "DOWNLOADING_VIDEO"
+  | "VIDEO_READY"
+  | "CUTTING"
+  | "COMPLETED"
+  | "FAILED";
 
-export type ClipState = 'NOT_STARTED' | 'PENDING' | 'CUTTING' | 'READY' | 'FAILED';
+export type ClipState =
+  "NOT_STARTED" | "PENDING" | "CUTTING" | "READY" | "FAILED";
 
-export type RenderState = 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED';
+export type RenderState = "PENDING" | "PROCESSING" | "READY" | "FAILED";
 
-export type DownloadState = 'DOWNLOADING' | 'DOWNLOADED' | 'FAILED';
+export type DownloadState = "DOWNLOADING" | "DOWNLOADED" | "FAILED";
 
-export type SourceType = 'YOUTUBE' | 'TWITCH' | 'UPLOAD';
+export type SourceType = "YOUTUBE" | "TWITCH" | "UPLOAD";
 
 /** Content language of an application — drives the discovery podcaster catalog. */
-export type PodcastLanguage = 'ENGLISH' | 'HINDI';
+export type PodcastLanguage = "ENGLISH" | "HINDI";
 
 // ---------------------------------------------------------------------------
 // Entities
@@ -126,6 +127,26 @@ export interface Video {
   updatedAt: string;
 }
 
+export type RawClip = {
+  id: string;
+  projectId: string;
+  end: number;
+  start: number;
+  state: ClipState;
+  renders: ClipRender[];
+  viralityScore: number;
+  reason: string[];
+  title: string;
+  description?: string;
+  tags: string[];
+  videoId?: string;
+  status: RecordStatus;
+  storagePath: string | null;
+  duration: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 /** Shared catalog entry — a named FFmpeg filter chain. */
 export interface ColorGradingPreset {
   id: string;
@@ -176,7 +197,7 @@ export interface ProjectDetail extends Project {
 // ---------------------------------------------------------------------------
 
 /** popular = all-time most-viewed · trending = recent uploads ranked by views */
-export type DiscoveryMode = 'popular' | 'trending';
+export type DiscoveryMode = "popular" | "trending";
 
 /** Curated podcaster catalog entry (server: discovery/podcasters.catalog.ts). */
 export interface PodcasterEntry {

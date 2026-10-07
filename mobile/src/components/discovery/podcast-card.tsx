@@ -1,4 +1,4 @@
-import { ActivityIndicator, Linking, Pressable, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,10 +8,10 @@ import {
   formatDuration,
   formatRelativeDate,
 } from "../../lib/format";
-import { toast } from "../../store/toast-store";
 import { colors, fonts, gradients, radii } from "../../theme";
 import { AppText } from "../ui/app-text";
 import { Card } from "../ui/card";
+import { openOnYouTube } from "../../lib/youtube";
 
 /**
  * One discovered podcast suggestion in the horizontal carousel — thumbnail
@@ -19,15 +19,6 @@ import { Card } from "../ui/card";
  * two cache actions: "Make clips" (USED) and dismiss (NOT_INTERESTED).
  * Tapping the thumbnail or title opens the video on YouTube.
  */
-
-/** Open the video on YouTube (deep-links into the app on Android). */
-async function openOnYouTube(url: string): Promise<void> {
-  try {
-    await Linking.openURL(url);
-  } catch {
-    toast.error("Could not open YouTube.");
-  }
-}
 
 export interface PodcastCardProps {
   podcast: DiscoveredPodcast;
